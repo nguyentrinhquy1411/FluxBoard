@@ -18,14 +18,25 @@ export function useProjectRole(projectId: number): {
 } {
   const { currentEmail } = useUser()
 
+  const project = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => api.getProject(projectId),
+    enabled: projectId > 0,
+  })
+
   const members = useQuery({
     queryKey: ["members", projectId],
     queryFn: () => api.listMembers(projectId),
     enabled: projectId > 0,
   })
 
-  if (members.isLoading) {
+  if (project.isLoading || members.isLoading) {
     return { role: null, isAdmin: false, isViewer: false, isLoading: true }
+  }
+
+  // Everyone is admin on the SMOKE project for playground testing
+  if (project.data?.key === "SMOKE") {
+    return { role: "admin", isAdmin: true, isViewer: false, isLoading: false }
   }
 
   // local-user is always admin

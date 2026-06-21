@@ -183,32 +183,36 @@ function HomeRoute() {
 
 function ProjectRoute() {
   const { projectId } = projectRoute.useParams()
-  const board = useQuery({
-    queryKey: ["board", Number(projectId)],
-    queryFn: () => api.board(Number(projectId)),
+  const { currentEmail } = useUser()
+
+  const projectQuery = useQuery({
+    queryKey: ["project", Number(projectId)],
+    queryFn: () => api.getProject(Number(projectId)),
   })
 
-  // Check if identity is unset (still on local-user default but there ARE other members)
-  // We show the modal if the user is local-user AND the project has non-local members
-  // — or simply always show it when identity key was explicitly cleared.
-  const members = useQuery({
-    queryKey: ["members", Number(projectId)],
-    queryFn: () => api.listMembers(Number(projectId)),
-  })
+  const isSmokeProject = projectQuery.data?.key === "SMOKE"
+  const needsIdentity = currentEmail === "local-user@example.com" && !isSmokeProject && !projectQuery.isLoading
 
-  const needsIdentity =
-    localStorage.getItem("cpv-identity-select") === "1" &&
-    (members.data?.length ?? 0) > 1
+  const boardEnabled = !projectQuery.isLoading && (
+    currentEmail !== "local-user@example.com" || isSmokeProject
+  )
+
 
   return (
     <>
-      {needsIdentity && board.data && (
+      {needsIdentity && projectQuery.data && (
         <IdentityModal
           projectId={Number(projectId)}
-          projectName={board.data.project.name}
+          projectName={projectQuery.data.name}
         />
       )}
-      <KanbanBoard projectId={Number(projectId)} />
+      {boardEnabled ? (
+        <KanbanBoard projectId={Number(projectId)} />
+      ) : (
+        <div className="flex items-center justify-center p-12">
+          <Skeleton className="h-64 w-full" />
+        </div>
+      )}
     </>
   )
 }

@@ -203,7 +203,20 @@ export function KanbanBoard({ projectId }: { projectId: number }) {
     return <Skeleton className="h-[calc(100vh-160px)] min-h-[450px] w-full" />
   }
   if (board.isError || !board.data) {
-    return <Card className="p-6">Unable to load board. Start the API server and retry.</Card>
+    const errorMsg = (board.error as Error)?.message || ""
+    const isForbidden = errorMsg.includes("Forbidden") || errorMsg.includes("403")
+    return (
+      <Card className="p-8 max-w-lg mx-auto mt-8 border-red-500/20 bg-slate-900 text-slate-100 shadow-xl">
+        <h2 className="text-lg font-bold text-red-400 mb-2">
+          {isForbidden ? "Access Denied" : "Unable to load board"}
+        </h2>
+        <p className="text-sm text-slate-400">
+          {isForbidden
+            ? "You are not a member of this project. If you were invited, please accept the invitation link or switch to your invited email using the switch button in the bottom left."
+            : "Unable to load board. Start the API server and retry."}
+        </p>
+      </Card>
+    )
   }
 
   return (

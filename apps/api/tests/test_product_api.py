@@ -247,6 +247,21 @@ def test_auth_flow_and_project_isolation() -> None:
         )
         assert resp.status_code == 200
 
+        # 8. Test public metadata endpoints (GET /api/projects/{id} and members list)
+        resp = client.get(
+            f"/api/projects/{usr1_proj_id}",
+            headers={"X-User-Email": "guest@example.com"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["key"] == "USR1"
+
+        resp = client.get(
+            f"/api/projects/{usr1_proj_id}/members",
+            headers={"X-User-Email": "guest@example.com"},
+        )
+        assert resp.status_code == 200
+        assert len(resp.json()) == 2  # user1@example.com + viewer1@example.com
+
     finally:
         app.dependency_overrides.clear()
 

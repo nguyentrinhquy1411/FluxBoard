@@ -144,6 +144,15 @@ def create_project(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.get("/api/projects/{project_id}", response_model=ProjectRead)
+def get_project(project_id: int, db: Session = DB_DEPENDENCY) -> ProjectRead:
+    try:
+        project = ProjectRepository(db).get_project(project_id)
+        return ProjectRead.model_validate(project)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @app.get("/api/projects/{project_id}/board", response_model=BoardRead)
 def get_board(
     project_id: int,
@@ -305,10 +314,8 @@ def ai_suggestions(
 @app.get("/api/projects/{project_id}/members", response_model=list[ProjectMemberRead])
 def list_project_members(
     project_id: int,
-    user_email: str = USER_EMAIL_DEP,
     db: Session = DB_DEPENDENCY,
 ) -> list[ProjectMemberRead]:
-    verify_project_access(project_id, user_email, require_admin=False, db=db)
     try:
         return ProjectRepository(db).list_members(project_id)
     except LookupError as exc:

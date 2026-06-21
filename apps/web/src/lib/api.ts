@@ -172,4 +172,5 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+  getProject: (projectId: number) => request<Project>(`/api/projects/${projectId}`),
 }

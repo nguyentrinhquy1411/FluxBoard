@@ -21,15 +21,15 @@
     },
     {
       "src": "/assets/(.*)",
-      "dest": "apps/web/dist/assets/$1"
+      "dest": "/assets/$1"
     },
     {
-      "src": "/((?!api|assets).*\\.[^/]+)$",
-      "dest": "apps/web/dist/$1"
+      "src": "/((?!api|assets).*\.[^/]+)$",
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "apps/web/dist/index.html"
+      "dest": "/index.html"
     }
   ]
 }
