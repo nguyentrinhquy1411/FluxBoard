@@ -9,7 +9,8 @@ import { IdentityModal } from "@/components/IdentityModal"
 import { UserProvider, useUser } from "@/contexts/UserContext"
 import { useProjectRole } from "@/hooks/useProjectRole"
 import { useState } from "react"
-import { Archive, LayoutDashboard, Sparkles, Bot, RotateCcw, UserPlus, Shield, Eye, LogOut } from "lucide-react"
+import { Archive, LayoutDashboard, Sparkles, Bot, RotateCcw, UserPlus, Shield, Eye, LogOut, Users } from "lucide-react"
+import { Toaster, toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
@@ -36,13 +37,25 @@ const projectArchivedRoute = createRoute({
   component: ProjectArchivedRoute,
 })
 
+const projectMembersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/projects/$projectId/members",
+  component: ProjectMembersRoute,
+})
+
 const joinRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/join/$token",
   component: JoinRoute,
 })
 
-const routeTree = rootRoute.addChildren([indexRoute, projectRoute, projectArchivedRoute, joinRoute])
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  projectRoute,
+  projectArchivedRoute,
+  projectMembersRoute,
+  joinRoute,
+])
 const router = createRouter({ routeTree })
 const queryClient = new QueryClient()
 
@@ -118,10 +131,18 @@ function RootLayout() {
                   <Archive className="h-4 w-4" />
                   <span>Archived Tasks</span>
                 </Link>
-
-                <div className="mt-4 pt-4 border-t border-slate-800/60">
-                  <ProjectMembers projectId={Number(projectId)} isAdmin={projectRole.isAdmin} />
-                </div>
+                {projectRole.isAdmin && (
+                  <Link
+                    to="/projects/$projectId/members"
+                    params={{ projectId }}
+                    activeProps={{ className: "bg-blue-600/20 text-blue-400 font-semibold" }}
+                    inactiveProps={{ className: "text-slate-400 hover:bg-slate-800 hover:text-slate-100" }}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm shrink-0"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Members & Access</span>
+                  </Link>
+                )}
               </div>
             )}
           </div>
@@ -228,8 +249,12 @@ function ProjectArchivedRoute() {
   const restore = useMutation({
     mutationFn: api.restoreTask,
     onSuccess: () => {
+      toast.success("Task restored successfully")
       queryClient.invalidateQueries({ queryKey: ["archived", Number(projectId)] })
       queryClient.invalidateQueries({ queryKey: ["board", Number(projectId)] })
+    },
+    onError: (error) => {
+      toast.error(`Failed to restore task: ${error.message}`)
     },
   })
 
@@ -279,8 +304,12 @@ function ProjectArchivedRoute() {
                     onClick={() => restore.mutate(task.id)}
                     className="h-8 text-xs gap-1 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
                   >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    {isAdmin ? "Restore" : "View only"}
+                    {restore.isPending ? (
+                      <span className="h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                    ) : (
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    )}
+                    {isAdmin ? (restore.isPending ? "Restoring..." : "Restore") : "View only"}
                   </Button>
                 </div>
               </div>
@@ -449,11 +478,87 @@ function JoinRoute() {
 }
 
 
+function ProjectMembersRoute() {
+  const { projectId } = projectMembersRoute.useParams()
+  const { currentEmail } = useUser()
+
+  const projectQuery = useQuery({
+    queryKey: ["project", Number(projectId)],
+    queryFn: () => api.getProject(Number(projectId)),
+  })
+
+  const isSmokeProject = projectQuery.data?.key === "SMOKE"
+  const needsIdentity = currentEmail === "local-user@example.com" && !isSmokeProject && !projectQuery.isLoading
+
+  const membersEnabled = !projectQuery.isLoading && (
+    currentEmail !== "local-user@example.com" || isSmokeProject
+  )
+
+  const { isAdmin, isLoading: isRoleLoading } = useProjectRole(Number(projectId))
+
+  if (projectQuery.isLoading || isRoleLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Skeleton className="h-64 w-full" />
+      </div>
+    )
+  }
+
+  // If the user is not an admin, show a beautiful Access Denied panel
+  if (!isAdmin) {
+    return (
+      <div className="w-full max-w-md mx-auto mt-12 bg-white rounded-2xl border border-slate-200 p-8 shadow-md text-center">
+        <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+          <Shield className="h-6 w-6 text-red-600" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-800 mb-2">Access Denied</h2>
+        <p className="text-slate-500 text-sm mb-6">
+          Only project administrators can access the members directory and permissions configuration.
+        </p>
+        <Link
+          to="/projects/$projectId"
+          params={{ projectId }}
+          className="inline-flex items-center justify-center h-10 px-4 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-all"
+        >
+          Back to Kanban Board
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full">
+      {needsIdentity && projectQuery.data && (
+        <IdentityModal
+          projectId={Number(projectId)}
+          projectName={projectQuery.data.name}
+        />
+      )}
+      {membersEnabled && (
+        <div className="w-full max-w-5xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+              <Users className="h-6 w-6 text-slate-600" />
+              Members & Access Control
+            </h1>
+            <p className="text-sm text-slate-500">
+              Manage team members, update permissions (grant/revoke admin access), and invite new members to this workspace.
+            </p>
+          </div>
+          <ProjectMembers projectId={Number(projectId)} isAdmin={isAdmin} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <RouterProvider router={router} />
+        <Toaster richColors position="top-right" />
       </UserProvider>
     </QueryClientProvider>
   )

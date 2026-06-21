@@ -6,7 +6,7 @@ import {
 import { attachClosestEdge, extractClosestEdge, Edge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge"
 import { DropIndicator } from "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { GripVertical, Plus, CalendarDays, User } from "lucide-react"
+import { GripVertical, Plus, CalendarDays, User, Loader2 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { TaskDrawer } from "@/components/TaskDrawer"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useProjectRole } from "@/hooks/useProjectRole"
 import { api, Board, Task } from "@/lib/api"
+import { toast } from "sonner"
 
 type DragTaskData = {
   type: "task"
@@ -40,6 +41,7 @@ export function KanbanBoard({ projectId }: { projectId: number }) {
     mutationFn: () => api.createTask(projectId, { title: newTitle }),
     onSuccess: (createdTask) => {
       setNewTitle("")
+      toast.success("Task created successfully!")
       queryClient.setQueryData<Board>(["board", projectId], (current) => {
         if (!current) return current
         return {
@@ -51,6 +53,9 @@ export function KanbanBoard({ projectId }: { projectId: number }) {
           ),
         }
       })
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create task: ${error.message || "Unknown error"}`)
     },
   })
 
@@ -117,10 +122,11 @@ export function KanbanBoard({ projectId }: { projectId: number }) {
       }
       return { previousBoard }
     },
-    onError: (_err, _variables, context) => {
+    onError: (err, _variables, context) => {
       if (context?.previousBoard) {
         queryClient.setQueryData(["board", projectId], context.previousBoard)
       }
+      toast.error(`Failed to move task: ${(err as Error).message || "Access denied"}`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["board", projectId] })
@@ -239,7 +245,12 @@ export function KanbanBoard({ projectId }: { projectId: number }) {
               disabled={!newTitle.trim() || createTask.isPending}
               onClick={() => createTask.mutate()}
             >
-              <Plus className="mr-1 h-4 w-4" /> Card
+              {createTask.isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="mr-1 h-4 w-4" />
+              )}
+              Card
             </Button>
           </div>
           )}

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Archive, CalendarDays, Eye, UserCircle2, X } from "lucide-react"
+import { Archive, CalendarDays, Eye, UserCircle2, X, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { useState } from "react"
 import { api, Board, ProjectMember, Status, Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -129,12 +130,14 @@ function TaskEditor({
       }
       return { previousBoard }
     },
-    onError: (_err, _variables, context) => {
+    onError: (err: Error, _variables, context) => {
       if (context?.previousBoard) {
         queryClient.setQueryData(["board", task.project_id], context.previousBoard)
       }
+      toast.error(`Failed to update task: ${err.message || "Unknown error"}`)
     },
     onSuccess: () => {
+      toast.success("Task updated successfully!")
       onOpenChange(false)
     },
   })
@@ -153,7 +156,11 @@ function TaskEditor({
         }
       })
       queryClient.invalidateQueries({ queryKey: ["archived", archivedTask.project_id] })
+      toast.success("Task archived successfully.")
       onOpenChange(false)
+    },
+    onError: (err: Error) => {
+      toast.error(`Failed to archive task: ${err.message || "Unknown error"}`)
     },
   })
 
@@ -163,6 +170,7 @@ function TaskEditor({
   )
 
   const isOverdue = dueDate && new Date(dueDate) < new Date()
+  const isPending = mutation.isPending || archive.isPending
 
   return (
     <div className="space-y-5">
@@ -185,7 +193,7 @@ function TaskEditor({
         <Input
           className="mt-1"
           value={title}
-          readOnly={!isAdmin}
+          readOnly={!isAdmin || isPending}
           onChange={(e) => setTitle(e.target.value)}
         />
       </div>
@@ -196,7 +204,7 @@ function TaskEditor({
         <Textarea
           className="mt-1 min-h-[80px]"
           value={description}
-          readOnly={!isAdmin}
+          readOnly={!isAdmin || isPending}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Add a description..."
         />
@@ -207,9 +215,9 @@ function TaskEditor({
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</label>
           <select
-            className="mt-1 h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
             value={statusId}
-            disabled={!isAdmin}
+            disabled={!isAdmin || isPending}
             onChange={(e) => setStatusId(Number(e.target.value))}
           >
             {statuses.map((status) => (
@@ -222,9 +230,9 @@ function TaskEditor({
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Priority</label>
           <select
-            className="mt-1 h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 h-10 w-full rounded-md border border-border bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60"
             value={priority}
-            disabled={!isAdmin}
+            disabled={!isAdmin || isPending}
             onChange={(e) => setPriority(e.target.value)}
           >
             <option value="low">Low</option>
@@ -251,12 +259,12 @@ function TaskEditor({
             </div>
           )}
           <select
-            className={`h-10 w-full rounded-md border border-border bg-white text-sm outline-none focus:ring-2 focus:ring-primary/30 ${
+            className={`h-10 w-full rounded-md border border-border bg-white text-sm outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-60 ${
               assignee ? "pl-9 pr-3" : "px-3"
             }`}
             value={assignee}
             onChange={(e) => setAssignee(e.target.value)}
-            disabled={!isAdmin || members.isLoading}
+            disabled={!isAdmin || members.isLoading || isPending}
           >
             <option value="">— Unassigned —</option>
             {members.data?.map((m) => (
@@ -269,7 +277,8 @@ function TaskEditor({
             <button
               type="button"
               onClick={() => setAssignee("")}
-              className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded"
+              disabled={isPending}
+              className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded disabled:opacity-50"
               title="Clear assignee"
             >
               <X className="h-3.5 w-3.5" />
@@ -305,14 +314,15 @@ function TaskEditor({
             type="date"
             className={`w-full ${isOverdue ? "border-red-300 text-red-600 focus:ring-red-300" : ""}`}
             value={dueDate}
-            readOnly={!isAdmin}
+            readOnly={!isAdmin || isPending}
             onChange={(e) => setDueDate(e.target.value)}
           />
           {isAdmin && dueDate && (
             <button
               type="button"
+              disabled={isPending}
               onClick={() => setDueDate("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 disabled:opacity-50"
               title="Clear due date"
             >
               <X className="h-3.5 w-3.5" />
@@ -327,11 +337,16 @@ function TaskEditor({
       {/* Actions */}
       {isAdmin && (
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
-          <Button disabled={mutation.isPending || !title.trim()} onClick={() => mutation.mutate()}>
+          <Button disabled={isPending || !title.trim()} onClick={() => mutation.mutate()}>
+            {mutation.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
             Save task
           </Button>
-          <Button variant="outline" disabled={archive.isPending} onClick={() => archive.mutate()}>
-            <Archive className="mr-1 h-4 w-4" />
+          <Button variant="outline" disabled={isPending} onClick={() => archive.mutate()}>
+            {archive.isPending ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Archive className="mr-1 h-4 w-4" />
+            )}
             Archive
           </Button>
         </div>

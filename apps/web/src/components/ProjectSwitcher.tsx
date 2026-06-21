@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useUser } from "@/contexts/UserContext"
+import { toast } from "sonner"
 
 export function ProjectSwitcher({ projectId }: { projectId?: number }) {
   const navigate = useNavigate()
@@ -21,7 +22,11 @@ export function ProjectSwitcher({ projectId }: { projectId?: number }) {
     onSuccess: (project) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] })
       setName("")
+      toast.success("Project created successfully!")
       navigate({ to: "/projects/$projectId", params: { projectId: String(project.id) } })
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create project: ${error.message || "Unknown error"}`)
     },
   })
 
@@ -50,6 +55,7 @@ export function ProjectSwitcher({ projectId }: { projectId?: number }) {
           placeholder="New project name"
           value={name}
           onChange={(event) => setName(event.target.value)}
+          disabled={createProject.isPending}
         />
         <Button
           size="sm"
@@ -67,7 +73,12 @@ export function ProjectSwitcher({ projectId }: { projectId?: number }) {
             })
           }
         >
-          <Plus className="mr-1 h-4 w-4" /> Project
+          {createProject.isPending ? (
+            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Plus className="mr-1 h-4 w-4" />
+          )}
+          Project
         </Button>
       </div>
     </div>
