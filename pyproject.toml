@@ -1,0 +1,50 @@
+[project]
+name = "cpv-agent-backend"
+version = "0.1.0"
+description = "Multi-threaded adaptive schema multi-agent backend for project management databases."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "httpx>=0.27.0",
+    "langchain-core>=0.3.0",
+    "langchain-groq>=0.2.0",
+    "pydantic>=2.8.0",
+    "pydantic-settings>=2.4.0",
+    "pymysql>=1.1.0",
+    "sqlalchemy>=2.0.0",
+    "typer>=0.12.0",
+    "uvicorn>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.6.0",
+]
+redis = [
+    "redis>=5.0.0",
+]
+
+[project.scripts]
+cpv = "main:cli"
+
+[tool.setuptools.packages.find]
+where = ["apps/api"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["apps/api"]
+testpaths = ["apps/api/tests"]
+markers = [
+    "tidb: tests that require a live TiDB database",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["apps/api"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

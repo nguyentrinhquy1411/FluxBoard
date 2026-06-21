@@ -1,0 +1,11 @@
+{
+  "name": "@cpv/api",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "node ./scripts/run.mjs dev",
+    "build": "node ./scripts/run.mjs build",
+    "test": "node ./scripts/run.mjs test",
+    "lint": "node ./scripts/run.mjs lint"
+  }
+}

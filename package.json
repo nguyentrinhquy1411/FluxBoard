@@ -1,0 +1,20 @@
+{
+  "name": "cpv-monorepo",
+  "private": true,
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "turbo dev --env-mode=loose",
+    "build": "turbo build --env-mode=loose",
+    "test": "turbo test --env-mode=loose",
+    "lint": "turbo lint --env-mode=loose",
+    "api:dev": "npm --workspace apps/api run dev",
+    "web:dev": "npm --workspace apps/web run dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.6.3"
+  }
+}

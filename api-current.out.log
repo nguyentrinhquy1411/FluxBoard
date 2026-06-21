@@ -1,0 +1,89 @@
+
+> api:dev
+> npm --workspace apps/api run dev
+
+
+> @cpv/api@0.1.0 dev
+> node ./scripts/run.mjs dev
+
+INFO:     127.0.0.1:54916 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54932 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54941 - "POST /api/projects HTTP/1.1" 201 Created
+INFO:     127.0.0.1:54944 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54945 - "POST /api/projects/60001/tasks HTTP/1.1" 201 Created
+INFO:     127.0.0.1:54947 - "POST /api/projects/60001/tasks HTTP/1.1" 201 Created
+INFO:     127.0.0.1:54948 - "POST /api/ai/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54949 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59320 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64278 - "GET /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62782 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62782 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64278 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59320 - "GET /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59320 - "GET /api/projects/1/ai/suggestions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63743 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61397 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56569 - "GET /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "OPTIONS /api/tasks/92/move HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "POST /api/tasks/92/move HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "GET /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "POST /api/tasks/92/move HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "GET /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "OPTIONS /api/tasks/91/move HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "POST /api/tasks/91/move HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53144 - "GET /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58361 - "OPTIONS /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57806 - "OPTIONS /api/projects/1/archived HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58361 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57806 - "GET /api/projects/1/archived HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57806 - "OPTIONS /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58361 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57806 - "GET /api/projects/1/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58361 - "GET /api/projects/1/archived HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57806 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63996 - "OPTIONS /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52007 - "OPTIONS /api/projects/30001/ai/suggestions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64772 - "OPTIONS /api/projects/30001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51446 - "OPTIONS /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59007 - "OPTIONS /api/projects/30001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64772 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63996 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52007 - "GET /api/projects/30001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58181 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56913 - "GET /api/projects/1/archived HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59007 - "GET /api/projects/30001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51446 - "GET /api/projects/30001/ai/suggestions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58181 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56913 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63996 - "GET /api/projects/1/archived HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63996 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56913 - "GET /api/projects/1/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58181 - "GET /api/projects/1/archived HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58181 - "OPTIONS /api/projects/60001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56913 - "OPTIONS /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58181 - "GET /api/projects/60001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56913 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51106 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60296 - "GET /api/projects/60001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64951 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64951 - "OPTIONS /api/projects/60001/ai/suggestions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60296 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64951 - "GET /api/projects/60001/ai/suggestions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57808 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54784 - "GET /api/projects/60001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54946 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54946 - "OPTIONS /api/ai/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54946 - "POST /api/ai/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54946 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58179 - "POST /api/ai/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58179 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49981 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63728 - "GET /api/projects/60001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54269 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62821 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62456 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57057 - "GET /api/projects/60001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49703 - "GET /api/projects/60001/board HTTP/1.1" 200 OK
+ Terminate batch job (Y/N)? INFO:     127.0.0.1:61315 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57505 - "GET /api/projects/60001/members HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51835 - "GET /api/projects/60001/board HTTP/1.1" 200 OK

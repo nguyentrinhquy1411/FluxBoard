@@ -1,0 +1,142 @@
+
+> web:dev
+> npm --workspace apps/web run dev
+
+
+> @cpv/web@0.1.0 dev
+> vite --host 127.0.0.1
+
+Re-optimizing dependencies because lockfile has changed
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m408[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m7:28:01 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m7:28:01 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m7:28:01 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TaskDrawer.tsx, /src/index.css[22m
+[2m7:28:01 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ArchivedItems.tsx, /src/index.css[22m
+[2m7:40:09 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css, /src/components/ProjectSwitcher.tsx, /src/components/KanbanBoard.tsx, /src/components/AIAssistant.tsx, /src/components/ArchivedItems.tsx, /src/components/TaskDrawer.tsx[22m
+[2m7:40:18 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m7:40:25 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m7:40:26 AM[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33m@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge[32m[39m
+[2m7:40:26 AM[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m7:40:32 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m7:40:33 AM[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33m@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box[32m[39m
+[2m7:40:33 AM[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m7:46:33 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m7:59:31 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m8:03:00 AM[22m [36m[1m[vite][22m[39m [32m../../.env changed, restarting server...[39m
+[2m8:03:00 AM[22m [36m[1m[vite][22m[39m server restarted.
+[2m8:46:39 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m8:46:44 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m8:46:48 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m8:46:52 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m8:46:56 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m8:46:58 AM[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33mreact-markdown[32m[39m
+[2m8:46:58 AM[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m9:01:07 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:01:07 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh (new export)
+[2m9:01:07 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:01:15 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m9:01:21 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m9:01:27 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m9:01:31 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ArchivedItems.tsx, /src/index.css[22m
+[2m9:02:06 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/KanbanBoard.test.tsx[22m
+[2m9:03:35 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx[22m
+[2m9:03:35 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:03:35 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:03:40 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx[22m
+[2m9:03:40 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:03:40 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:03:48 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m9:03:54 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m9:03:59 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ProjectSwitcher.tsx, /src/index.css[22m
+[2m9:05:58 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m9:09:09 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx[22m
+[2m9:09:09 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:09:09 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:09:14 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx[22m
+[2m9:09:14 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:09:14 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:09:26 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:09:26 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:09:26 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:09:31 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:09:31 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:09:31 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:09:38 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m9:09:43 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m9:12:35 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ProjectMembers.tsx, /src/index.css[22m
+[2m9:12:40 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ProjectMembers.tsx, /src/index.css[22m
+[2m9:18:03 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx, /src/components/ProjectMembers.tsx[22m
+[2m9:18:03 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:18:03 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:18:08 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx, /src/components/ProjectMembers.tsx[22m
+[2m9:18:08 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:18:08 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:18:14 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ProjectMembers.tsx, /src/index.css[22m
+[2m9:18:19 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:18:27 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:18:33 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:18:44 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:23:14 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx, /src/components/ProjectMembers.tsx[22m
+[2m9:23:14 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:23:14 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:23:32 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ProjectMembers.tsx, /src/index.css[22m
+[2m9:24:17 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:24:18 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:24:18 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:24:35 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m9:29:29 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m9:30:11 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TaskDrawer.tsx, /src/index.css[22m
+[2m9:30:34 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TaskDrawer.tsx, /src/index.css[22m
+[2m9:33:47 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m9:33:47 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:33:47 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m9:33:47 AM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:33:47 AM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx, /src/components/ProjectMembers.tsx, /src/components/IdentityModal.tsx[22m
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ProjectMembers.tsx, /src/index.css[22m
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:05:26 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:05:36 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m12:05:36 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:05:36 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:05:36 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:05:36 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:05:58 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m12:06:03 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m12:06:25 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TaskDrawer.tsx, /src/index.css[22m
+[2m12:06:48 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m12:07:05 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/IdentityModal.tsx, /src/index.css[22m
+[2m12:07:29 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/contexts/UserContext.tsx, /src/index.css[22m
+[2m12:07:29 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m12:07:29 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/contexts/UserContext.tsx[22m Could not Fast Refresh ("UserContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:07:29 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css, /src/components/IdentityModal.tsx, /src/components/KanbanBoard.tsx, /src/components/AIAssistant.tsx[22m
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/App.tsx[22m Could not Fast Refresh ("AIContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m12:07:30 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/App.tsx[22m
+[2m12:07:45 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/KanbanBoard.test.tsx[22m
+[2m12:10:53 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ProjectMembers.tsx, /src/index.css[22m
+[2m12:18:20 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AIAssistant.tsx, /src/index.css[22m
+[2m12:18:26 PM[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33m@assistant-ui/react[32m[39m
+[2m12:18:26 PM[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m12:18:26 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/App.tsx, /src/components/KanbanBoard.tsx, /src/components/ProjectSwitcher.tsx, /src/components/TaskDrawer.tsx, /src/components/AIAssistant.tsx, /src/components/ProjectMembers.tsx, /src/components/IdentityModal.tsx[22m
+[2m12:18:27 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/components/AIAssistant.tsx[22m Could not Fast Refresh (export removed)
+[2m12:18:27 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/KanbanBoard.tsx[22m
+[2m12:18:38 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.tsx, /src/index.css[22m
+[2m12:18:53 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/KanbanBoard.tsx, /src/index.css[22m
+[2m12:20:46 PM[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/KanbanBoard.test.tsx[22m

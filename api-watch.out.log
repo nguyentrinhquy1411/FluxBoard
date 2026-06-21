@@ -1,0 +1,19 @@
+
+> api:dev
+> npm --workspace apps/api run dev
+
+
+> @cpv/api@0.1.0 dev
+> node ./scripts/run.mjs dev
+
+INFO:     127.0.0.1:57295 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57297 - "POST /api/ai/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57298 - "POST /api/ai/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57300 - "POST /api/ai/query HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57301 - "GET /api/projects/1/archived HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57305 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57312 - "GET /api/projects/1/archived HTTP/1.1" 200 OK
+ INFO:     127.0.0.1:62051 - "OPTIONS /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57658 - "OPTIONS /api/projects/1/board HTTP/1.1" 200 OK
+Terminate batch job (Y/N)? INFO:     127.0.0.1:62051 - "GET /api/projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57658 - "GET /api/projects/1/board HTTP/1.1" 200 OK

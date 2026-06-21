@@ -1,0 +1,13 @@
+.env
+.env.local
+node_modules/
+apps/*/node_modules/
+apps/web/dist/
+apps/api/dist/
+.turbo/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+cpv_local.db
