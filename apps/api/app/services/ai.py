@@ -27,7 +27,6 @@ from app.schemas.product import (
     TaskCreate,
     TaskUpdate,
 )
-from app.sub_agents.response_formatter import ResponseFormatterAgent
 from app.schemas.validation import (
     ColumnDefinition,
     DatabaseSchema,
@@ -35,6 +34,7 @@ from app.schemas.validation import (
     TableDefinition,
 )
 from app.sub_agents.jira_anchor import JiraAnchor
+from app.sub_agents.response_formatter import ResponseFormatterAgent
 from app.sub_agents.schema_pruner import SchemaPruner
 from app.sub_agents.security_veto import SecurityVetoAgent
 
@@ -319,18 +319,23 @@ class KanbanAIService:
         low = raw.lower()
 
         roles = ["viewer"]
-        if user_email:
-            member = self.session.scalar(
-                select(models.ProjectMember).where(
-                    models.ProjectMember.project_id == project_id,
-                    models.ProjectMember.email == user_email,
-                )
+        email = user_email or "local-user@example.com"
+        member = self.session.scalar(
+            select(models.ProjectMember).where(
+                models.ProjectMember.project_id == project_id,
+                models.ProjectMember.email == email,
             )
-            if member:
-                roles = [member.role]
+        )
+        if member:
+            roles = [member.role]
 
         task_key = _key(raw)
         prio = _priority(low)
+        is_admin = "admin" in roles
+        viewer_error = (
+            "❌ Viewers can ask read-only questions, "
+            "but creating, moving, archiving, or restoring tasks is admin-only."
+        )
 
         # ── 1. Task detail (must be before board summary — both match "show") ──
         if re.search(
@@ -344,28 +349,38 @@ class KanbanAIService:
             r"\b(change|set|update|make|switch|to)\b", low
         ):
             if task_key and prio:
+                if not is_admin:
+                    return _resp(viewer_error, "reject_unrelated", self._MODEL)
                 return self._update_priority(project_id, task_key, prio)
 
         # ── 3. Status / column move ───────────────────────────────────────────
         if re.search(r"\b(move|put|change|set|assign|update)\b", low) and task_key:
             for s in self._statuses(project_id):
                 if s.name.lower() in low:
+                    if not is_admin:
+                        return _resp(viewer_error, "reject_unrelated", self._MODEL)
                     return self._update_status(project_id, task_key, s)
 
         # ── 4. Archive ────────────────────────────────────────────────────────
         if re.search(r"\b(archive|archieve|hide)\b", low):
+            if not is_admin:
+                return _resp(viewer_error, "reject_unrelated", self._MODEL)
             all_ = self._is_bulk_all_request(low)
             num_id = _num_id(raw) if not task_key else None
             return self._archive(project_id, task_key, num_id, all_)
 
         # ── 5. Restore ────────────────────────────────────────────────────────
         if re.search(r"\b(restore|unarchive)\b", low):
+            if not is_admin:
+                return _resp(viewer_error, "reject_unrelated", self._MODEL)
             all_ = self._is_bulk_all_request(low)
             num_id = _num_id(raw) if not task_key else None
             return self._restore(project_id, task_key, num_id, all_)
 
         # ── 6. Create task ────────────────────────────────────────────────────
         if re.search(r"\b(create|add|new)\b.*\b(task|card|ticket)\b", low):
+            if not is_admin:
+                return _resp(viewer_error, "reject_unrelated", self._MODEL)
             return self._create_task(project_id, _title_from_create(raw), prio or "medium")
 
         # ── 0. Check relevance via Routing Agent after known local intents ────
@@ -432,7 +447,7 @@ class KanbanAIService:
         task_read = task_to_read(task)
         return _resp(
             "\n".join(lines),
-            "read_board",
+            "task_detail",
             self._MODEL,
             rows=[task_read.model_dump(mode="json")],
             affected_tasks=[task_read],
@@ -729,6 +744,13 @@ class KanbanAIService:
 
             if result.action == "task_detail" and result.task_key:
                 return self._task_detail(project_id, result.task_key.upper())
+            if "admin" not in roles:
+                viewer_error = (
+                    "❌ Viewers can ask read-only questions, "
+                    "but creating, moving, archiving, or restoring tasks is admin-only."
+                )
+                return _resp(viewer_error, "reject_unrelated", self._MODEL)
+
             if result.action == "update_priority" and result.task_key and result.priority:
                 return self._update_priority(
                     project_id, result.task_key.upper(), result.priority.lower()

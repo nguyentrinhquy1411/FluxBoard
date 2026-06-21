@@ -283,11 +283,11 @@ function ProjectArchivedRoute() {
     </div>
   )
 }
-
 function JoinRoute() {
   const { token } = joinRoute.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { setIdentity } = useUser()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
 
@@ -300,6 +300,7 @@ function JoinRoute() {
   const acceptInvite = useMutation({
     mutationFn: () => api.acceptInvite(token, { email, name: name.trim() || undefined }),
     onSuccess: (data) => {
+      setIdentity(email)
       queryClient.invalidateQueries({ queryKey: ["members", data.project_id] })
       navigate({ to: "/projects/$projectId", params: { projectId: String(data.project_id) } })
     },

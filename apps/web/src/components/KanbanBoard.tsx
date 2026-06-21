@@ -200,7 +200,7 @@ export function KanbanBoard({ projectId }: { projectId: number }) {
   }, [moveTask, board.data, isAdmin])
 
   if (board.isLoading) {
-    return <Skeleton className="h-[520px] w-full" />
+    return <Skeleton className="h-[calc(100vh-160px)] min-h-[450px] w-full" />
   }
   if (board.isError || !board.data) {
     return <Card className="p-6">Unable to load board. Start the API server and retry.</Card>
@@ -231,7 +231,7 @@ export function KanbanBoard({ projectId }: { projectId: number }) {
           </div>
           )}
         </div>
-        <div className="flex min-h-[560px] gap-3 overflow-x-auto rounded-xl bg-blue-700/90 p-3">
+        <div className="flex h-[calc(100vh-160px)] min-h-[450px] gap-3 overflow-x-auto rounded-xl bg-blue-700/90 p-3">
           {board.data.columns.map((column) => (
             <KanbanColumn
               key={column.status.id}
@@ -291,15 +291,15 @@ function KanbanColumn({
   return (
     <div
       ref={ref}
-      className={`h-fit min-h-[520px] w-72 shrink-0 rounded-xl bg-slate-100 p-3 shadow-sm ${
+      className={`flex flex-col h-full w-72 shrink-0 rounded-xl bg-slate-100 p-3 shadow-sm ${
         activeDragId !== null && isOver ? "ring-2 ring-blue-300" : ""
       }`}
     >
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between shrink-0">
         <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
         <Badge>{tasks.length}</Badge>
       </div>
-      <div className="space-y-2">
+      <div className="flex-1 space-y-2 overflow-y-auto pr-1">
         {tasks.length === 0 && (
           <div className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">
             Drop cards here

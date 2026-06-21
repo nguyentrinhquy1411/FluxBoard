@@ -22,6 +22,7 @@ class ResponseFormatterAgent:
 
     _ACTION_TITLES = {
         "read_board": "Board analysis",
+        "task_detail": "Task details",
         "create_task": "Task created",
         "update_task": "Task updated",
         "archive_task": "Tasks archived",
@@ -39,9 +40,13 @@ class ResponseFormatterAgent:
         question: str | None = None,
     ) -> FormattedResponse:
         title = self._ACTION_TITLES.get(action, "AI response")
-        summary = self._summary_from_answer(answer)
-        highlights = self._build_highlights(rows=rows, affected_tasks=affected_tasks, answer=answer)
-        next_steps = self._build_next_steps(action=action, question=question, affected_tasks=affected_tasks)
+        summary = self._summary_from_answer(answer, action)
+        highlights = self._build_highlights(
+            rows=rows, affected_tasks=affected_tasks, answer=answer
+        )
+        next_steps = self._build_next_steps(
+            action=action, question=question, affected_tasks=affected_tasks
+        )
         return FormattedResponse(
             title=title,
             summary=summary,
@@ -49,7 +54,9 @@ class ResponseFormatterAgent:
             next_steps=next_steps,
         )
 
-    def _summary_from_answer(self, answer: str) -> str:
+    def _summary_from_answer(self, answer: str, action: str) -> str:
+        if action == "task_detail":
+            return answer
         parts = [line.strip() for line in answer.splitlines() if line.strip()]
         return parts[0] if parts else "The agent completed the request."
 

@@ -6,7 +6,7 @@ AI analyst, FastAPI backend, and Vite React frontend.
 ## Quick Start
 
 ```powershell
-python -m pip install -e ".[dev]"
+uv sync --all-extras
 npm install
 
 # Configure secrets locally. Do not commit .env.
@@ -14,10 +14,10 @@ Copy-Item .env.example .env
 # Fill CPV_TIDB_URL and GROQ_API_KEY in .env, then rotate any credentials shared in chat.
 
 # Create the TiDB app schema/tables when ready.
-python -m app.database.migrate
+uv run python -m app.database.migrate
 
 # API
-uvicorn app.api:app --reload
+uv run uvicorn app.api:app --reload
 
 # Web
 npm run dev

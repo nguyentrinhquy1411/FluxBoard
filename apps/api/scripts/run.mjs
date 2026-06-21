@@ -16,7 +16,7 @@ if (!args) {
   process.exit(1)
 }
 
-const child = spawn("python", args, {
+const child = spawn("uv", ["run", "python", ...args], {
   cwd: process.cwd(),
   env: process.env,
   shell: false,

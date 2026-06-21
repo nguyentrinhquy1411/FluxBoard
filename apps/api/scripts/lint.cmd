@@ -1,2 +1,2 @@
 @echo off
-python -m ruff check .
+uv run python -m ruff check .

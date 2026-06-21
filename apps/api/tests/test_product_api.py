@@ -114,5 +114,22 @@ def test_board_task_lifecycle_and_ai_query() -> None:
         board_after = client.get(f"/api/projects/{project_id}/board").json()
         for col in board_after["columns"]:
             assert len(col["tasks"]) == 0
+
+        # Test: Viewer trying to create a task via AI is blocked
+        client.post(
+            f"/api/projects/{project_id}/members",
+            json={"email": "viewer@example.com", "role": "viewer"},
+        )
+        ai_create_viewer = client.post(
+            "/api/ai/query",
+            json={
+                "project_id": project_id,
+                "question": "Create task: Viewer task",
+                "user_email": "viewer@example.com",
+            },
+        )
+        assert ai_create_viewer.status_code == 200
+        assert ai_create_viewer.json()["action"] == "reject_unrelated"
+        assert "Viewers can ask" in ai_create_viewer.json()["answer"]
     finally:
         app.dependency_overrides.clear()

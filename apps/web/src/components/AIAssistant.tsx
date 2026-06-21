@@ -212,11 +212,23 @@ function AssistantThread({
   )
 }
 
+interface CustomMetadata {
+  presentation?: {
+    title: string
+    summary: string
+    highlights: string[]
+    next_steps: string[]
+  }
+  sql?: string
+  used_model?: string
+  action?: string
+}
+
 function AssistantMessage() {
   const role = useMessage((message) => message.role)
   const isUser = role === "user"
   const statusType = useMessage((message) => message.status?.type)
-  const metadata = useMessage((message) => (message as any).metadata?.custom)
+  const metadata = useMessage((message) => (message as { metadata?: { custom?: CustomMetadata } }).metadata?.custom)
 
   if (role === "assistant") {
     if (statusType === "running") {
@@ -232,7 +244,7 @@ function AssistantMessage() {
     if (metadata?.presentation) {
       return (
         <MessagePrimitive.Root className="mb-3 flex justify-start">
-          <div className="w-[92%] rounded-2xl rounded-bl-sm border border-slate-200 bg-white p-4 text-slate-700 shadow-md">
+          <div className="w-[92%] rounded-2xl rounded-bl-sm bg-white p-4 text-slate-700 shadow-md">
             <PresentationMessage
               presentation={metadata.presentation}
               sql={metadata.sql}
@@ -253,7 +265,7 @@ function AssistantMessage() {
         className={`max-w-[92%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
           isUser
             ? "rounded-br-sm bg-blue-600 text-white"
-            : "rounded-bl-sm border border-slate-200 bg-slate-50 text-slate-700"
+            : "rounded-bl-sm bg-slate-100 text-slate-700"
         }`}
       >
         <MessagePrimitive.Content
@@ -357,7 +369,7 @@ function AgentThinkingProgress() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-4 shadow-sm backdrop-blur-sm">
+    <div className="flex flex-col gap-3 rounded-xl bg-slate-100/50 p-4 shadow-sm backdrop-blur-sm">
       <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
         <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
         Agent Workflow Executing
@@ -438,7 +450,7 @@ function PresentationMessage({
   return (
     <div className="flex flex-col gap-4 text-slate-800">
       {/* Header section with Action Title and Badge */}
-      <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
+      <div className="flex items-start justify-between gap-2 pb-2">
         <div className="font-semibold text-slate-900 flex items-center gap-1.5 text-xs">
           <Sparkles className="h-3.5 w-3.5 text-blue-500 shrink-0" />
           {presentation.title}
@@ -459,7 +471,7 @@ function PresentationMessage({
 
       {/* Highlights */}
       {presentation.highlights && presentation.highlights.length > 0 && (
-        <div className="space-y-1.5 rounded-lg bg-slate-50/50 p-2.5 border border-slate-100">
+        <div className="space-y-1.5 rounded-lg bg-slate-50/80 p-2.5">
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
             Highlights
           </div>
@@ -485,7 +497,7 @@ function PresentationMessage({
             {showSql ? "Hide compiled query" : "Show compiled query"}
           </button>
           {showSql && (
-            <pre className="overflow-x-auto rounded-lg bg-slate-900 p-2 text-[10px] font-mono text-emerald-400 border border-slate-800 shadow-inner max-w-full whitespace-pre-wrap break-all leading-normal">
+            <pre className="overflow-x-auto rounded-lg bg-slate-900 p-2 text-[10px] font-mono text-emerald-400 shadow-inner max-w-full whitespace-pre-wrap break-all leading-normal">
               <code>{sql}</code>
             </pre>
           )}
@@ -494,7 +506,7 @@ function PresentationMessage({
 
       {/* Next Steps */}
       {presentation.next_steps && presentation.next_steps.length > 0 && (
-        <div className="space-y-2 border-t border-slate-100 pt-3">
+        <div className="space-y-2 pt-3">
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
             <Lightbulb className="h-3 w-3 text-amber-500" />
             Suggested Actions
@@ -504,7 +516,7 @@ function PresentationMessage({
               <button
                 key={i}
                 onClick={() => handleNextStepClick(step)}
-                className="group flex items-start gap-1.5 rounded-lg border border-slate-150 bg-white p-2 text-left text-xs text-slate-600 shadow-sm transition-all hover:border-blue-250 hover:bg-blue-50/20 hover:text-blue-700"
+                className="group flex items-start gap-1.5 rounded-lg bg-slate-50 p-2 text-left text-xs text-slate-600 shadow-sm transition-all hover:bg-blue-50/20 hover:text-blue-700"
               >
                 <CornerDownRight className="mt-0.5 h-3.5 w-3.5 text-slate-400 shrink-0 group-hover:text-blue-500 transition-colors" />
                 <span className="flex-1 leading-normal text-xs">{step}</span>

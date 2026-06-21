@@ -1,2 +1,2 @@
 @echo off
-python -m pytest
+uv run python -m pytest
