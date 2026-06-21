@@ -105,10 +105,25 @@ class ProjectRepository:
         self, payload: ProjectCreate, creator_email: str = "local-user@example.com"
     ) -> ProjectRead:
         workspace = self._ensure_workspace()
+
+        # Automatically deduplicate project keys in the workspace
+        base_key = payload.key.upper()
+        unique_key = base_key
+        counter = 1
+        while self.session.scalar(
+            select(models.Project).where(
+                models.Project.workspace_id == workspace.id,
+                models.Project.key == unique_key,
+            )
+        ) is not None:
+            suffix = str(counter)
+            unique_key = f"{base_key[:32 - len(suffix)]}{suffix}"
+            counter += 1
+
         project = models.Project(
             workspace_id=workspace.id,
             name=payload.name,
-            key=payload.key.upper(),
+            key=unique_key,
             description=payload.description,
             created_by=creator_email,
             updated_by=creator_email,
