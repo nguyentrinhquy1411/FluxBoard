@@ -24,6 +24,7 @@ import {
   Terminal,
 } from "lucide-react"
 import { useMemo, useState, useEffect } from "react"
+import ReactMarkdown from "react-markdown"
 import { api } from "@/lib/api"
 import { useUser } from "@/contexts/UserContext"
 import { Button } from "@/components/ui/button"
@@ -281,9 +282,27 @@ function AssistantMessage() {
 function MessageText() {
   return (
     <MessagePartPrimitive.Text
-      component="div"
+      component={MarkdownMessageText}
       className="whitespace-pre-wrap [&_code]:rounded [&_code]:bg-slate-200 [&_code]:px-1"
     />
+  )
+}
+
+function MarkdownMessageText({ children, className }: { children?: string; className?: string }) {
+  return (
+    <div className={className}>
+      <ReactMarkdown>{children ?? ""}</ReactMarkdown>
+    </div>
+  )
+}
+
+function MarkdownInline({ children, className }: { children: string; className?: string }) {
+  return (
+    <span className={className}>
+      <ReactMarkdown components={{ p: ({ children }) => <>{children}</> }}>
+        {children}
+      </ReactMarkdown>
+    </span>
   )
 }
 
@@ -466,7 +485,7 @@ function PresentationMessage({
 
       {/* Main summary */}
       <div className="text-xs font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">
-        {presentation.summary}
+        <ReactMarkdown>{presentation.summary}</ReactMarkdown>
       </div>
 
       {/* Highlights */}
@@ -476,10 +495,10 @@ function PresentationMessage({
             Highlights
           </div>
           <div className="space-y-1">
-            {presentation.highlights.map((h, i) => (
-              <div key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
+            {presentation.highlights.map((h) => (
+              <div key={h} className="flex items-start gap-1.5 text-xs text-slate-700">
                 <span className="mt-1.5 flex h-1 w-1 shrink-0 rounded-full bg-blue-400" />
-                <span className="leading-normal text-xs">{h}</span>
+                <MarkdownInline className="leading-normal text-xs">{h}</MarkdownInline>
               </div>
             ))}
           </div>
@@ -490,6 +509,7 @@ function PresentationMessage({
       {sql && (
         <div className="space-y-1.5">
           <button
+            type="button"
             onClick={() => setShowSql(!showSql)}
             className="flex items-center gap-1 text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
           >
@@ -512,14 +532,15 @@ function PresentationMessage({
             Suggested Actions
           </div>
           <div className="flex flex-col gap-1.5">
-            {presentation.next_steps.map((step, i) => (
+            {presentation.next_steps.map((step) => (
               <button
-                key={i}
+                key={step}
+                type="button"
                 onClick={() => handleNextStepClick(step)}
                 className="group flex items-start gap-1.5 rounded-lg bg-slate-50 p-2 text-left text-xs text-slate-600 shadow-sm transition-all hover:bg-blue-50/20 hover:text-blue-700"
               >
                 <CornerDownRight className="mt-0.5 h-3.5 w-3.5 text-slate-400 shrink-0 group-hover:text-blue-500 transition-colors" />
-                <span className="flex-1 leading-normal text-xs">{step}</span>
+                <MarkdownInline className="flex-1 leading-normal text-xs">{step}</MarkdownInline>
                 <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity self-center shrink-0 text-blue-500 ml-1" />
               </button>
             ))}
