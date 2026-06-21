@@ -163,7 +163,11 @@ function RootLayout() {
 }
 
 function HomeRoute() {
-  const projects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects })
+  const { currentEmail } = useUser()
+  const projects = useQuery({
+    queryKey: ["projects", currentEmail],
+    queryFn: () => api.listProjects(currentEmail),
+  })
   return (
     <div className="rounded-lg border border-border bg-white p-8">
       <h1 className="text-2xl font-semibold">Choose or create a project</h1>

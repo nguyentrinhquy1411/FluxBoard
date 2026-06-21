@@ -5,12 +5,17 @@ import { useState } from "react"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useUser } from "@/contexts/UserContext"
 
 export function ProjectSwitcher({ projectId }: { projectId?: number }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [name, setName] = useState("")
-  const projects = useQuery({ queryKey: ["projects"], queryFn: api.listProjects })
+  const { currentEmail } = useUser()
+  const projects = useQuery({
+    queryKey: ["projects", currentEmail],
+    queryFn: () => api.listProjects(currentEmail),
+  })
   const createProject = useMutation({
     mutationFn: api.createProject,
     onSuccess: (project) => {

@@ -99,10 +99,12 @@ export type SuggestionsResponse = {
 const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "" : "http://127.0.0.1:8000")
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const email = localStorage.getItem("cpv-identity") || "local-user@example.com"
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       "content-type": "application/json",
+      "X-User-Email": email,
       ...init?.headers,
     },
   })
@@ -113,7 +115,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  listProjects: () => request<Project[]>("/api/projects"),
+  listProjects: (userEmail?: string) =>
+    request<Project[]>(
+      userEmail ? `/api/projects?user_email=${encodeURIComponent(userEmail)}` : "/api/projects"
+    ),
   createProject: (payload: { name: string; key: string; description?: string }) =>
     request<Project>("/api/projects", { method: "POST", body: JSON.stringify(payload) }),
   board: (projectId: number) => request<Board>(`/api/projects/${projectId}/board`),

@@ -133,3 +133,120 @@ def test_board_task_lifecycle_and_ai_query() -> None:
         assert "Viewers can ask" in ai_create_viewer.json()["answer"]
     finally:
         app.dependency_overrides.clear()
+
+
+def test_auth_flow_and_project_isolation() -> None:
+    client = client_with_db()
+    try:
+        # 1. Get projects without header/query -> only SMOKE project is returned
+        resp = client.get("/api/projects")
+        assert resp.status_code == 200
+        projects = resp.json()
+        assert len(projects) == 1
+        assert projects[0]["key"] == "SMOKE"
+        smoke_id = projects[0]["id"]
+
+        # 2. Create project as user1@example.com
+        resp = client.post(
+            "/api/projects",
+            json={"name": "User 1 Project", "key": "USR1"},
+            headers={"X-User-Email": "user1@example.com"},
+        )
+        assert resp.status_code == 201
+        usr1_proj = resp.json()
+        usr1_proj_id = usr1_proj["id"]
+
+        # Verify usr1 is indeed a member (admin)
+        members_resp = client.get(
+            f"/api/projects/{usr1_proj_id}/members",
+            headers={"X-User-Email": "user1@example.com"},
+        )
+        assert members_resp.status_code == 200
+        members = members_resp.json()
+        assert len(members) == 1
+        assert members[0]["email"] == "user1@example.com"
+        assert members[0]["role"] == "admin"
+
+        # 3. Get projects as user1@example.com -> both SMOKE and USR1 projects returned
+        resp = client.get("/api/projects", headers={"X-User-Email": "user1@example.com"})
+        assert resp.status_code == 200
+        projects = resp.json()
+        assert len(projects) == 2
+        keys = {p["key"] for p in projects}
+        assert keys == {"SMOKE", "USR1"}
+
+        # Get projects as user2@example.com -> only SMOKE is returned
+        resp = client.get("/api/projects", headers={"X-User-Email": "user2@example.com"})
+        assert resp.status_code == 200
+        projects = resp.json()
+        assert len(projects) == 1
+        assert projects[0]["key"] == "SMOKE"
+
+        # 4. user2@example.com tries to read usr1_proj board -> 403 Forbidden
+        resp = client.get(
+            f"/api/projects/{usr1_proj_id}/board",
+            headers={"X-User-Email": "user2@example.com"},
+        )
+        assert resp.status_code == 403
+
+        # 5. user2@example.com tries to create task in usr1_proj -> 403 Forbidden
+        resp = client.post(
+            f"/api/projects/{usr1_proj_id}/tasks",
+            json={"title": "Hack task"},
+            headers={"X-User-Email": "user2@example.com"},
+        )
+        assert resp.status_code == 403
+
+        # 6. Add viewer1@example.com as viewer to usr1_proj
+        resp = client.post(
+            f"/api/projects/{usr1_proj_id}/members",
+            json={"email": "viewer1@example.com", "role": "viewer"},
+            headers={"X-User-Email": "user1@example.com"},
+        )
+        assert resp.status_code == 201
+
+        # viewer1@example.com can read board
+        resp = client.get(
+            f"/api/projects/{usr1_proj_id}/board",
+            headers={"X-User-Email": "viewer1@example.com"},
+        )
+        assert resp.status_code == 200
+
+        # viewer1@example.com cannot create task -> 403 Forbidden
+        resp = client.post(
+            f"/api/projects/{usr1_proj_id}/tasks",
+            json={"title": "Viewer task"},
+            headers={"X-User-Email": "viewer1@example.com"},
+        )
+        assert resp.status_code == 403
+
+        # 7. Smoke project allows anyone (even guest@example.com) to read and write
+        resp = client.get(
+            f"/api/projects/{smoke_id}/board",
+            headers={"X-User-Email": "guest@example.com"},
+        )
+        assert resp.status_code == 200
+        smoke_board = resp.json()
+        backlog_status_id = smoke_board["columns"][0]["status"]["id"]
+
+        # guest can create task on SMOKE project
+        resp = client.post(
+            f"/api/projects/{smoke_id}/tasks",
+            json={"title": "Guest task", "status_id": backlog_status_id},
+            headers={"X-User-Email": "guest@example.com"},
+        )
+        assert resp.status_code == 201
+        task_id = resp.json()["id"]
+
+        # guest can move task on SMOKE project
+        done_status_id = smoke_board["columns"][-1]["status"]["id"]
+        resp = client.post(
+            f"/api/tasks/{task_id}/move",
+            json={"status_id": done_status_id},
+            headers={"X-User-Email": "guest@example.com"},
+        )
+        assert resp.status_code == 200
+
+    finally:
+        app.dependency_overrides.clear()
+

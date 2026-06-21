@@ -35,28 +35,90 @@ class ProjectRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def list_projects(self) -> list[ProjectRead]:
+    def _ensure_smoke_project(self) -> models.Project:
+        smoke = self.session.scalar(
+            select(models.Project).where(models.Project.key == "SMOKE")
+        )
+        if smoke is not None:
+            return smoke
+
+        workspace = self._ensure_workspace()
+        smoke = models.Project(
+            workspace_id=workspace.id,
+            name="Smoke Project",
+            key="SMOKE",
+            description="A public project for guests to test the app.",
+            created_by=LOCAL_USER,
+            updated_by=LOCAL_USER,
+        )
+        self.session.add(smoke)
+        self.session.flush()
+        # Add default admin project member
+        self.session.add(
+            models.ProjectMember(
+                project_id=smoke.id, email="local-user@example.com", role="admin"
+            )
+        )
+        self.session.flush()
+        for index, (name, category, color) in enumerate(
+            [
+                ("Backlog", "todo", "slate"),
+                ("In Progress", "active", "blue"),
+                ("Review", "active", "amber"),
+                ("Done", "done", "green"),
+            ]
+        ):
+            self.session.add(
+                models.Status(
+                    project_id=smoke.id,
+                    name=name,
+                    category=category,
+                    color=color,
+                    position=Decimal(index * 1000),
+                )
+            )
+        self._activity(smoke.id, None, "project.created", {"name": smoke.name})
+        self.session.flush()
+        self.session.refresh(smoke)
+        return smoke
+
+    def list_projects(self, user_email: str | None = None) -> list[ProjectRead]:
+        self._ensure_smoke_project()
+        query = select(models.Project)
+        if user_email:
+            member_project_ids = select(models.ProjectMember.project_id).where(
+                models.ProjectMember.email == user_email
+            )
+            query = query.where(
+                (models.Project.id.in_(member_project_ids)) |
+                (models.Project.key == "SMOKE")
+            )
+        else:
+            query = query.where(models.Project.key == "SMOKE")
+
         projects = self.session.scalars(
-            select(models.Project).order_by(models.Project.created_at)
+            query.order_by(models.Project.created_at)
         ).all()
         return [ProjectRead.model_validate(project) for project in projects]
 
-    def create_project(self, payload: ProjectCreate) -> ProjectRead:
+    def create_project(
+        self, payload: ProjectCreate, creator_email: str = "local-user@example.com"
+    ) -> ProjectRead:
         workspace = self._ensure_workspace()
         project = models.Project(
             workspace_id=workspace.id,
             name=payload.name,
             key=payload.key.upper(),
             description=payload.description,
-            created_by=LOCAL_USER,
-            updated_by=LOCAL_USER,
+            created_by=creator_email,
+            updated_by=creator_email,
         )
         self.session.add(project)
         self.session.flush()
-        # Add default admin project member
+        # Add creator as admin project member
         self.session.add(
             models.ProjectMember(
-                project_id=project.id, email="local-user@example.com", role="admin"
+                project_id=project.id, email=creator_email, role="admin"
             )
         )
         self.session.flush()

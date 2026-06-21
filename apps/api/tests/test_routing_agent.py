@@ -34,6 +34,13 @@ def _create_mock_session():
     )
     session.add(proj)
     session.flush()
+    
+    # Add project member
+    from app.database.models import ProjectMember
+    member = ProjectMember(project_id=proj.id, email="local-user@example.com", role="admin")
+    session.add(member)
+    session.flush()
+
     status = Status(project_id=proj.id, name="Todo", category="todo", color="blue", position=0)
     session.add(status)
     session.commit()
