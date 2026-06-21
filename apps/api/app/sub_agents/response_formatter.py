@@ -22,6 +22,7 @@ class ResponseFormatterAgent:
 
     _ACTION_TITLES = {
         "read_board": "Board analysis",
+        "analyst_report": "Project Analysis",
         "task_detail": "Task details",
         "create_task": "Task created",
         "update_task": "Task updated",
@@ -41,9 +42,7 @@ class ResponseFormatterAgent:
     ) -> FormattedResponse:
         title = self._ACTION_TITLES.get(action, "AI response")
         summary = self._summary_from_answer(answer, action)
-        highlights = self._build_highlights(
-            rows=rows, affected_tasks=affected_tasks, answer=answer
-        )
+        highlights = self._build_highlights(rows=rows, affected_tasks=affected_tasks, answer=answer)
         next_steps = self._build_next_steps(
             action=action, question=question, affected_tasks=affected_tasks
         )
@@ -114,6 +113,11 @@ class ResponseFormatterAgent:
             return [
                 "Ask for a narrower filter by assignee, status, or priority.",
                 "Open a task by key to inspect comments, labels, and due dates.",
+            ]
+        if action == "analyst_report":
+            return [
+                "Ask for the same analysis filtered by assignee, status, or priority.",
+                "Open the highest-impact tasks to decide what should be triaged next.",
             ]
         if action == "create_task" and task_key:
             return [

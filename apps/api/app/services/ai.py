@@ -31,8 +31,11 @@ from app.schemas.validation import (
     ColumnDefinition,
     DatabaseSchema,
     ForeignKeyDefinition,
+    SQLOutput,
+    SQLParameter,
     TableDefinition,
 )
+from app.sub_agents.analyst_agent import AnalystAgent
 from app.sub_agents.jira_anchor import JiraAnchor
 from app.sub_agents.response_formatter import ResponseFormatterAgent
 from app.sub_agents.schema_pruner import SchemaPruner
@@ -309,6 +312,11 @@ class KanbanAIService:
         self._veto = SecurityVetoAgent()
         self._anchor = JiraAnchor()
         self._repo = TaskRepository(session)
+        self._analyst: AnalystAgent | None = (
+            AnalystAgent(api_key=settings.groq_api_key, model_name=settings.groq_model)
+            if settings.groq_api_key
+            else None
+        )
 
     # ─── public entry point ───────────────────────────────────────────────────
 
@@ -402,17 +410,25 @@ class KanbanAIService:
         if routing_resp:
             return routing_resp
 
-        # ── 7. Generic board summary ──────────────────────────────────────────
+        # ── 7. Analyst Agent: analytical questions ───────────────────────────
+        # Keep this before generic board summary so "how many/count/status" analytics
+        # are not swallowed by the deterministic summary shortcut.
+        if self._analyst and self._analyst.classify(raw):
+            analyst_result = self._analyst_query(project_id, raw, roles)
+            if analyst_result:
+                return analyst_result
+
+        # ── 8. Generic board summary ──────────────────────────────────────────
         if re.search(r"\b(summarize|summary|list|how many|board|count|overview|status)\b", low):
             return self._board_summary(project_id)
 
-        # ── 8. Groq fallback: dispatch for complex/unknown questions ──────────
+        # ── 9. Groq fallback: dispatch for complex/unknown questions ──────────
         if self.settings.groq_api_key:
             result = self._groq_dispatch(project_id, raw, low, roles)
             if result:
                 return result
 
-        # ── 9. Hard fallback ──────────────────────────────────────────────────
+        # ── 10. Hard fallback ─────────────────────────────────────────────────
         return self._board_summary(project_id)
 
     # ─── mutation handlers (TaskRepository — ORM, safe, audited) ─────────────
@@ -633,6 +649,116 @@ class KanbanAIService:
             f"  🗄️   Archived: {archived_count}"
         )
         return _resp(answer, "read_board", self._MODEL, rows=rows)
+
+    # ─── analyst pipeline: classify → plan SQL → execute → summarize ──────────
+
+    def _analyst_query(
+        self, project_id: int, question: str, roles: list[str]
+    ) -> AIQueryResponse | None:
+        """
+        Full analyst pipeline:
+          1. Prune/format visible schema DDL
+          2. AnalystAgent plans SQL
+          3. SecurityVeto validates SELECT-only SQL
+          4. Execute SQL on the read-only session
+          5. AnalystAgent summarizes raw rows
+          6. Format and return AIQueryResponse
+        """
+        if not self._analyst:
+            return None
+
+        try:
+            from sqlalchemy import text
+
+            visible = self._veto.derive_visible_schema(KANBAN_SCHEMA, roles).visible_schema
+            if visible is None:
+                return None
+
+            context = self._pruner.prune(question, visible)
+            selected_tables = set(context.selected_tables) | {"tasks"}
+            if "status" in question.lower() or "column" in question.lower():
+                selected_tables.add("statuses")
+
+            pruned_schema = DatabaseSchema(
+                tables=[table for table in visible.tables if table.name in selected_tables],
+                foreign_keys=[
+                    fk
+                    for fk in visible.foreign_keys
+                    if fk.source_table in selected_tables and fk.target_table in selected_tables
+                ],
+            )
+
+            ddl_lines: list[str] = []
+            for table in pruned_schema.tables:
+                cols = ", ".join(f"{c.name} {c.data_type}" for c in table.columns)
+                ddl_lines.append(f"  {table.name}({cols})")
+            schema_ddl = "\n".join(ddl_lines)
+
+            fk_lines: list[str] = []
+            for fk in pruned_schema.foreign_keys:
+                fk_lines.append(
+                    f"  {fk.source_table}.{fk.source_column} → {fk.target_table}.{fk.target_column}"
+                )
+            if fk_lines:
+                schema_ddl += "\n\nForeign keys:\n" + "\n".join(fk_lines)
+
+            # Step 1: Plan SQL
+            analyst_result = self._analyst.analyze(project_id, question, schema_ddl, self.settings)
+            if not analyst_result or not analyst_result.sql_plan.sql:
+                return None
+            sql_plan = analyst_result.sql_plan
+
+            sql_output = SQLOutput(
+                query=sql_plan.sql,
+                parameters=[
+                    SQLParameter(name=name, value=value) for name, value in sql_plan.params.items()
+                ],
+                referenced_tables=list(selected_tables),
+                rationale=sql_plan.explanation,
+            )
+            self._veto.validate_sql(sql_output)
+
+            # Step 2: Execute SQL on the session
+            result_proxy = self.session.execute(text(sql_plan.sql), sql_plan.params)
+            rows = [dict(row._mapping) for row in result_proxy.fetchall()]
+
+            # Step 3: Summarize results
+            summary = self._analyst.summarize(question, rows)
+
+            # Build answer text from the summary
+            if summary:
+                lines = [
+                    f"📊 **{summary.title}**",
+                    "",
+                ]
+                for finding in summary.key_findings:
+                    lines.append(f"  • {finding}")
+                lines += [
+                    "",
+                    f"💡 **Insight:** {summary.insights}",
+                    "",
+                    f"✅ **Recommendation:** {summary.recommendation}",
+                ]
+                answer = "\n".join(lines)
+            else:
+                answer = self._format_rows(f"📊 Analysis: {sql_plan.explanation}", rows)
+
+            return _resp(
+                answer,
+                "analyst_report",
+                self.settings.groq_model,
+                rows=rows,
+                sql=sql_plan.sql,
+                question=question,
+            )
+
+        except Exception as e:
+            import sys
+            import traceback
+
+            print(f"Analyst query failed: {e}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            return None
 
     # ─── read pipeline: SchemaPruner → SecurityVeto → Groq SQL → JiraAnchor ─
 
