@@ -5,11 +5,12 @@ import { AIAssistantSidebar } from "@/components/AIAssistant"
 import { KanbanBoard } from "@/components/KanbanBoard"
 import { ProjectSwitcher } from "@/components/ProjectSwitcher"
 import { ProjectMembers } from "@/components/ProjectMembers"
+import { AboutPage } from "@/components/AboutPage"
 import { IdentityModal } from "@/components/IdentityModal"
 import { UserProvider, useUser } from "@/contexts/UserContext"
 import { useProjectRole } from "@/hooks/useProjectRole"
 import { useState } from "react"
-import { Archive, LayoutDashboard, Sparkles, Bot, RotateCcw, UserPlus, Shield, Eye, LogOut, Users } from "lucide-react"
+import { Archive, LayoutDashboard, Sparkles, Bot, RotateCcw, UserPlus, Shield, Eye, LogOut, Users, Info } from "lucide-react"
 import { Toaster, toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -49,12 +50,19 @@ const joinRoute = createRoute({
   component: JoinRoute,
 })
 
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: AboutPage,
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   projectRoute,
   projectArchivedRoute,
   projectMembersRoute,
   joinRoute,
+  aboutRoute,
 ])
 const router = createRouter({ routeTree })
 const queryClient = new QueryClient()
@@ -145,6 +153,19 @@ function RootLayout() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* About link – always visible */}
+          <div className="px-2 shrink-0">
+            <Link
+              to="/about"
+              activeProps={{ className: "bg-blue-600/20 text-blue-400 font-semibold" }}
+              inactiveProps={{ className: "text-slate-400 hover:bg-slate-800 hover:text-slate-100" }}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm"
+            >
+              <Info className="h-4 w-4" />
+              <span>About &amp; Design</span>
+            </Link>
           </div>
 
           {/* Bottom section: identity + AI toggle */}
