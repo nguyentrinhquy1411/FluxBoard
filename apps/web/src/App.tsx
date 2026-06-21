@@ -74,10 +74,10 @@ function RootLayout() {
   return (
     <div className="flex min-h-screen w-screen overflow-hidden bg-slate-50 font-sans">
         {/* Left Sidebar */}
-        <aside className="w-64 min-w-[256px] bg-slate-900 text-slate-100 flex flex-col justify-between p-4 border-r border-slate-800 shadow-md">
-          <div className="flex flex-col gap-6">
+        <aside className="w-64 min-w-[256px] h-screen max-h-screen bg-slate-900 text-slate-100 flex flex-col justify-between p-4 border-r border-slate-800 shadow-md select-none shrink-0 overflow-hidden">
+          <div className="flex flex-col gap-6 overflow-y-auto flex-1 pr-1">
             {/* Logo */}
-            <div className="flex items-center gap-2 px-2 py-1">
+            <div className="flex items-center gap-2 px-2 py-1 shrink-0">
               <Sparkles className="h-6 w-6 text-blue-400" />
               <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-200 bg-clip-text text-transparent">
                 CPV Kanban AI
@@ -85,7 +85,7 @@ function RootLayout() {
             </div>
 
             {/* Project Switcher section */}
-            <div className="flex flex-col gap-1 px-2">
+            <div className="flex flex-col gap-1 px-2 shrink-0">
               <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Select Project
               </span>
@@ -94,7 +94,7 @@ function RootLayout() {
 
             {/* Navigation links if a project is selected */}
             {projectId && (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 flex-1">
                 <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">
                   Project Workspace
                 </span>
@@ -103,7 +103,7 @@ function RootLayout() {
                   params={{ projectId }}
                   activeProps={{ className: "bg-blue-600/20 text-blue-400 font-semibold" }}
                   inactiveProps={{ className: "text-slate-400 hover:bg-slate-800 hover:text-slate-100" }}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm shrink-0"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   <span>Kanban Board</span>
@@ -113,7 +113,7 @@ function RootLayout() {
                   params={{ projectId }}
                   activeProps={{ className: "bg-blue-600/20 text-blue-400 font-semibold" }}
                   inactiveProps={{ className: "text-slate-400 hover:bg-slate-800 hover:text-slate-100" }}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm shrink-0"
                 >
                   <Archive className="h-4 w-4" />
                   <span>Archived Tasks</span>
@@ -127,7 +127,7 @@ function RootLayout() {
           </div>
 
           {/* Bottom section: identity + AI toggle */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 pt-4 border-t border-slate-800/80 shrink-0">
             {/* Current identity widget */}
             <IdentityWidget projectId={projectId ? Number(projectId) : undefined} />
 
