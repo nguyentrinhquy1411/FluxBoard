@@ -42,122 +42,128 @@ class ProjectRepository:
         if smoke is not None:
             return smoke
 
-        workspace = self._ensure_workspace()
-        smoke = models.Project(
-            workspace_id=workspace.id,
-            name="Smoke Project",
-            key="SMOKE",
-            description="A public project for guests to test the app.",
-            created_by=LOCAL_USER,
-            updated_by=LOCAL_USER,
-        )
-        self.session.add(smoke)
-        self.session.flush()
-        # Add default admin project member
-        self.session.add(
-            models.ProjectMember(
-                project_id=smoke.id, email="local-user@example.com", role="admin"
+        if smoke is None:
+            workspace = self._ensure_workspace()
+            smoke = models.Project(
+                workspace_id=workspace.id,
+                name="Smoke Project",
+                key="SMOKE",
+                description="A public project for guests to test the app.",
+                created_by=LOCAL_USER,
+                updated_by=LOCAL_USER,
             )
+            self.session.add(smoke)
+            self.session.flush()
+            # Add default admin project member
+            self.session.add(
+                models.ProjectMember(
+                    project_id=smoke.id, email="local-user@example.com", role="admin"
+                )
+            )
+            self.session.flush()
+            for index, (name, category, color) in enumerate(
+                [
+                    ("Backlog", "todo", "slate"),
+                    ("In Progress", "active", "blue"),
+                    ("Review", "active", "amber"),
+                    ("Done", "done", "green"),
+                ]
+            ):
+                self.session.add(
+                    models.Status(
+                        project_id=smoke.id,
+                        name=name,
+                        category=category,
+                        color=color,
+                        position=Decimal(index * 1000),
+                    )
+                )
+            self._activity(smoke.id, None, "project.created", {"name": smoke.name})
+            self.session.flush()
+
+        # Seed default tasks in the SMOKE project if none exist yet
+        task_count = self.session.scalar(
+            select(func.count(models.Task.id)).where(models.Task.project_id == smoke.id)
         )
-        self.session.flush()
-        for index, (name, category, color) in enumerate(
-            [
-                ("Backlog", "todo", "slate"),
-                ("In Progress", "active", "blue"),
-                ("Review", "active", "amber"),
-                ("Done", "done", "green"),
+        if task_count == 0:
+            statuses = self.session.scalars(
+                select(models.Status)
+                .where(models.Status.project_id == smoke.id)
+                .order_by(models.Status.position)
+            ).all()
+
+            task_prefixes = [
+                "Refactor",
+                "Implement",
+                "Design",
+                "Write tests for",
+                "Fix bug in",
+                "Optimize",
+                "Document",
+                "Review",
+                "Deploy",
+                "Investigate",
             ]
-        ):
-            self.session.add(
-                models.Status(
-                    project_id=smoke.id,
-                    name=name,
-                    category=category,
-                    color=color,
-                    position=Decimal(index * 1000),
+            task_nouns = [
+                "authentication flow",
+                "database indexes",
+                "UI components",
+                "API endpoints",
+                "AI assistant agent",
+                "invite link logic",
+                "payment gateway integration",
+                "search functionality",
+                "analytics dashboard",
+                "notification system",
+            ]
+            task_descriptions = [
+                "Ensure that this component operates cleanly under high concurrent load.",
+                "Review code with team members and obtain approval before merging.",
+                "Write comprehensive unit and integration tests to cover all edge cases.",
+                "Document the API surface area and publish to internal wiki.",
+                "Optimize execution time and memory footprint of the core routine.",
+            ]
+            priorities = ["low", "medium", "high", "critical"]
+
+            # Generate exactly 100 mock tasks distributed across the 4 statuses
+            for idx in range(1, 101):
+                prefix = task_prefixes[(idx - 1) % len(task_prefixes)]
+                noun = task_nouns[(idx - 1) % len(task_nouns)]
+                desc = task_descriptions[(idx - 1) % len(task_descriptions)]
+                priority = priorities[(idx - 1) % len(priorities)]
+
+                # Columns: Backlog (30), In Progress (30), Review (20), Done (20)
+                if idx <= 30:
+                    status_id = statuses[0].id
+                    pos_multiplier = idx
+                elif idx <= 60:
+                    status_id = statuses[1].id
+                    pos_multiplier = idx - 30
+                elif idx <= 80:
+                    status_id = statuses[2].id
+                    pos_multiplier = idx - 60
+                else:
+                    status_id = statuses[3].id
+                    pos_multiplier = idx - 80
+
+                self.session.add(
+                    models.Task(
+                        project_id=smoke.id,
+                        status_id=status_id,
+                        sequence_number=idx,
+                        key=f"SMOKE-{idx}",
+                        title=f"{prefix} {noun} (#{idx})",
+                        description=desc,
+                        priority=priority,
+                        position=Decimal(pos_multiplier * 1000),
+                        created_by=LOCAL_USER,
+                        updated_by=LOCAL_USER,
+                    )
                 )
-            )
-        self._activity(smoke.id, None, "project.created", {"name": smoke.name})
-        self.session.flush()
 
-        # Seed default tasks in the SMOKE project for play testing
-        statuses = self.session.scalars(
-            select(models.Status)
-            .where(models.Status.project_id == smoke.id)
-            .order_by(models.Status.position)
-        ).all()
+            self.session.flush()
+            self.session.refresh(smoke)
 
-        task_prefixes = [
-            "Refactor",
-            "Implement",
-            "Design",
-            "Write tests for",
-            "Fix bug in",
-            "Optimize",
-            "Document",
-            "Review",
-            "Deploy",
-            "Investigate",
-        ]
-        task_nouns = [
-            "authentication flow",
-            "database indexes",
-            "UI components",
-            "API endpoints",
-            "AI assistant agent",
-            "invite link logic",
-            "payment gateway integration",
-            "search functionality",
-            "analytics dashboard",
-            "notification system",
-        ]
-        task_descriptions = [
-            "Ensure that this component operates cleanly under high concurrent load.",
-            "Review code with team members and obtain approval before merging.",
-            "Write comprehensive unit and integration tests to cover all edge cases.",
-            "Document the API surface area and publish to internal wiki.",
-            "Optimize execution time and memory footprint of the core routine.",
-        ]
-        priorities = ["low", "medium", "high", "critical"]
-
-        # Generate exactly 100 mock tasks distributed across the 4 statuses
-        for idx in range(1, 101):
-            prefix = task_prefixes[(idx - 1) % len(task_prefixes)]
-            noun = task_nouns[(idx - 1) % len(task_nouns)]
-            desc = task_descriptions[(idx - 1) % len(task_descriptions)]
-            priority = priorities[(idx - 1) % len(priorities)]
-
-            # Columns: Backlog (30), In Progress (30), Review (20), Done (20)
-            if idx <= 30:
-                status_id = statuses[0].id
-                pos_multiplier = idx
-            elif idx <= 60:
-                status_id = statuses[1].id
-                pos_multiplier = idx - 30
-            elif idx <= 80:
-                status_id = statuses[2].id
-                pos_multiplier = idx - 60
-            else:
-                status_id = statuses[3].id
-                pos_multiplier = idx - 80
-
-            self.session.add(
-                models.Task(
-                    project_id=smoke.id,
-                    status_id=status_id,
-                    sequence_number=idx,
-                    key=f"SMOKE-{idx}",
-                    title=f"{prefix} {noun} (#{idx})",
-                    description=desc,
-                    priority=priority,
-                    position=Decimal(pos_multiplier * 1000),
-                    created_by=LOCAL_USER,
-                    updated_by=LOCAL_USER,
-                )
-            )
-
-        self.session.flush()
-        self.session.refresh(smoke)
         return smoke
 
     def list_projects(self, user_email: str | None = None) -> list[ProjectRead]:

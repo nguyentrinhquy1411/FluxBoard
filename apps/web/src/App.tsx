@@ -218,6 +218,23 @@ function ProjectRoute() {
     currentEmail !== "local-user@example.com" || isSmokeProject
   )
 
+  if (projectQuery.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center h-full">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-md w-full">
+          <h2 className="text-xl font-bold text-slate-800">Project Not Found</h2>
+          <p className="mt-2 text-sm text-slate-500">
+            The project you are looking for may have been deleted, or you might not have permission to view it.
+          </p>
+          <Link to="/">
+            <Button className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm">
+              Go to Homepage
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
