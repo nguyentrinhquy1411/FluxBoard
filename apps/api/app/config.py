@@ -51,6 +51,19 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("GROQ_MODEL", "CPV_GROQ_MODEL"),
     )
 
+    llm_provider: str = Field(
+        default="groq",
+        validation_alias=AliasChoices("LLM_PROVIDER", "CPV_LLM_PROVIDER"),
+    )
+    ollama_model: str = Field(
+        default="llama3.1",
+        validation_alias=AliasChoices("OLLAMA_MODEL", "CPV_OLLAMA_MODEL"),
+    )
+    ollama_base_url: str = Field(
+        default="http://localhost:11434",
+        validation_alias=AliasChoices("OLLAMA_BASE_URL", "CPV_OLLAMA_BASE_URL"),
+    )
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

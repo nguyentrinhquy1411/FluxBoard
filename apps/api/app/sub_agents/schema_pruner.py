@@ -221,7 +221,9 @@ def _shortest_path(source: str, target: str, adjacency: dict[str, set[str]]) -> 
         current, path = queue.popleft()
         if current == target:
             return path
-        for neighbor in adjacency[current]:
+        # Sort neighbours so equal-length join paths tie-break deterministically
+        # (set iteration order otherwise varies across processes).
+        for neighbor in sorted(adjacency[current]):
             if neighbor not in seen:
                 seen.add(neighbor)
                 queue.append((neighbor, [*path, neighbor]))

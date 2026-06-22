@@ -65,10 +65,10 @@ class MasterOrchestrator:
         )
 
     def _compile_sql(self, request: QueryRequest, context: SchemaContext) -> SQLOutput:
-        if self.settings.groq_api_key and not self.settings.mock_mode:
+        sql_model = _build_sql_model(self.settings)
+        if sql_model is not None and not self.settings.mock_mode:
             try:
                 from langchain_core.messages import HumanMessage, SystemMessage
-                from langchain_groq import ChatGroq
 
                 visible_schema = request.database_schema or default_project_schema()
                 selected = set(context.selected_tables or [])
@@ -87,11 +87,7 @@ class MasterOrchestrator:
                     if fk.source_table in selected or fk.target_table in selected
                 )
 
-                model = ChatGroq(
-                    api_key=self.settings.groq_api_key,
-                    model=self.settings.groq_model,
-                    temperature=0,
-                ).with_structured_output(SQLOutput)
+                model = sql_model
 
                 sys_prompt = (
                     "You are a Text-to-SQL assistant. Translate the user question "
@@ -187,6 +183,44 @@ class MasterOrchestrator:
             confidence=0.78,
             rationale="deterministic physical query compiler",
         )
+
+
+def _build_sql_model(settings: Settings):
+    """Return a structured-output chat model for SQL compilation, or ``None``.
+
+    Provider-agnostic: selects Groq or a local Ollama model based on
+    ``settings.llm_provider``. Returns ``None`` in mock mode or when no provider
+    is configured, so the caller falls back to the deterministic compiler.
+    """
+    if settings.mock_mode:
+        return None
+    provider = (settings.llm_provider or "groq").lower()
+    try:
+        if provider == "ollama":
+            from langchain_ollama import ChatOllama
+
+            return ChatOllama(
+                model=settings.ollama_model,
+                base_url=settings.ollama_base_url,
+                temperature=0,
+            ).with_structured_output(SQLOutput)
+        if settings.groq_api_key:
+            from langchain_groq import ChatGroq
+
+            return ChatGroq(
+                api_key=settings.groq_api_key,
+                model=settings.groq_model,
+                temperature=0,
+            ).with_structured_output(SQLOutput)
+    except Exception as exc:
+        # Don't fail silently: a provider/import error here makes the caller
+        # fall back to the limited deterministic compiler, which would
+        # otherwise look like a correct (but degraded) answer.
+        import sys
+
+        print(f"SQL model init failed (provider={provider}): {exc}", file=sys.stderr)
+        return None
+    return None
 
 
 def default_project_schema() -> DatabaseSchema:

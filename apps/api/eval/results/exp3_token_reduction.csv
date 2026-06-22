@@ -1,0 +1,31 @@
+qid,question,selected_tables,n_selected,full_tokens,pruned_tokens,token_reduction,table_recall
+q01,show all tasks in the PLAT project,activity_events|labels|project_invites|project_members|projects|statuses|tasks,7,417,309,0.259,1.0
+q02,list completed tasks,tasks,1,417,62,0.8513,0.5
+q03,how many tasks are in each status,statuses|tasks,2,417,94,0.7746,1.0
+q04,which tasks are high priority,tasks,1,417,62,0.8513,1.0
+q05,show tasks assigned to nobody,tasks,1,417,62,0.8513,1.0
+q06,list the comments on each task,comments|tasks,2,417,97,0.7674,1.0
+q07,which labels are used in the project,activity_events|labels|project_invites|project_members|projects|statuses|task_labels|tasks,8,417,344,0.1751,1.0
+q08,show overdue tasks with their assignee,tasks,1,417,62,0.8513,1.0
+q09,count tasks per project,activity_events|labels|project_invites|project_members|projects|statuses|tasks,7,417,309,0.259,1.0
+q10,list every project and its workspace,activity_events|labels|project_invites|project_members|projects|statuses|tasks|workspaces,8,417,346,0.1703,1.0
+q11,show archived tasks,tasks,1,417,62,0.8513,1.0
+q12,what statuses exist in this project,activity_events|labels|project_invites|project_members|projects|statuses|tasks,7,417,309,0.259,1.0
+q13,list tasks created this month,comments|projects|tasks|workspaces,4,417,180,0.5683,1.0
+q14,show the most recently updated tasks,projects|tasks,2,417,107,0.7434,1.0
+q15,which tasks have the label backend,labels|projects|task_labels|tasks,4,417,169,0.5947,1.0
+q16,show comments written by a given member,comments,1,417,26,0.9376,1.0
+q17,count comments per task,comments|tasks,2,417,97,0.7674,1.0
+q18,list all labels and their colors,labels|task_labels,2,417,40,0.9041,1.0
+q19,show tasks in the done column for project PLAT,activity_events|labels|project_invites|project_members|projects|statuses|tasks,7,417,309,0.259,1.0
+q20,list projects in a workspace,projects|workspaces,2,417,72,0.8273,1.0
+q21,which tasks are blocked,tasks,1,417,62,0.8513,0.5
+q22,show the title and priority of every task,tasks,1,417,62,0.8513,1.0
+q23,count how many labels each task has,labels|projects|task_labels|tasks,4,417,169,0.5947,1.0
+q24,list tasks due next week,tasks,1,417,62,0.8513,1.0
+q25,show statuses ordered by position,statuses|tasks,2,417,94,0.7746,1.0
+q26,which projects have no tasks,projects|tasks,2,417,107,0.7434,1.0
+q27,show the description of a task,projects|tasks,2,417,107,0.7434,1.0
+q28,list tasks and the comments count,comments|tasks,2,417,97,0.7674,1.0
+q29,show all tasks moved to in progress,tasks,1,417,62,0.8513,0.5
+q30,list label names attached to a task,labels|projects|task_labels|tasks,4,417,169,0.5947,1.0
