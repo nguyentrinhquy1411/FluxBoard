@@ -165,6 +165,23 @@ class SuggestionsResponse(BaseModel):
     suggestions: list[Suggestion]
 
 
+class DigestIssue(BaseModel):
+    severity: str  # "critical" | "warning" | "info"
+    title: str
+    detail: str
+
+
+class DigestResponse(BaseModel):
+    health_score: int  # 1–10
+    summary: str
+    done_today: list[str]
+    in_progress: list[str]
+    blockers: list[str]
+    issues: list[DigestIssue]
+    stats: dict
+    generated_at: datetime
+
+
 class ProjectInviteCreate(BaseModel):
     role: str = "viewer"
     expires_in_hours: int = 24

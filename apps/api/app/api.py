@@ -18,6 +18,7 @@ from app.schemas.product import (
     BoardRead,
     CommentCreate,
     CommentRead,
+    DigestResponse,
     InviteAcceptPayload,
     ProjectCreate,
     ProjectInviteCreate,
@@ -436,6 +437,17 @@ def ai_suggestions(
     project = _load_project(project_id, db)
     require_membership(project, user, db)
     return KanbanAIService(db, get_settings()).get_suggestions(project_id)
+
+
+@app.get("/api/projects/{project_id}/ai/digest", response_model=DigestResponse)
+def ai_digest(
+    project_id: int,
+    user: models.User | None = OPTIONAL_USER_DEP,
+    db: Session = DB_DEPENDENCY,
+) -> DigestResponse:
+    project = _load_project(project_id, db)
+    require_membership(project, user, db)
+    return KanbanAIService(db, get_settings()).digest(project_id)
 
 
 # ── Members ───────────────────────────────────────────────────────────────────

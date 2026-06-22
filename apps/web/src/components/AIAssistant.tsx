@@ -22,14 +22,24 @@ import {
   CornerDownRight,
   Lightbulb,
   Terminal,
+  RefreshCw,
+  Activity,
+  AlertTriangle,
+  Info,
+  Heart,
+  Trash2,
+  Copy,
+  Check,
 } from "lucide-react"
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState } from "react"
 import ReactMarkdown from "react-markdown"
-import { api } from "@/lib/api"
+import { api, type DigestResponse, type DigestIssue } from "@/lib/api"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
+
+type SidebarTab = "chat" | "digest"
 
 export function AIAssistantSidebar({
   projectId,
@@ -38,7 +48,8 @@ export function AIAssistantSidebar({
   projectId: number
   isAdmin: boolean
 }) {
-  const queryClient = useQueryClient()
+  const [tab, setTab] = useState<SidebarTab>("chat")
+  const [clearKey, setClearKey] = useState(0)
   const { user } = useAuth()
   const board = useQuery({ queryKey: ["board", projectId], queryFn: () => api.board(projectId) })
   const suggestionsQuery = useQuery({
@@ -56,6 +67,105 @@ export function AIAssistantSidebar({
     (action) => isAdmin || !isMutationPrompt(action.prompt),
   )
 
+  if (board.isLoading) {
+    return (
+      <aside className="flex h-full w-[360px] shrink-0 flex-col border-l border-slate-200 bg-white p-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="mt-4 h-96 w-full" />
+      </aside>
+    )
+  }
+
+  return (
+    <aside className="flex h-screen w-[380px] shrink-0 flex-col border-l border-slate-200 bg-white shadow-xl">
+      {/* Header */}
+      <div className="border-b border-slate-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
+              <Sparkles className="h-4 w-4 text-blue-600" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-slate-900">AI Kanban Copilot</h2>
+              <p className="truncate text-xs text-slate-500">
+                {user?.display_name ?? user?.email ?? "guest"} ·{" "}
+                <span className={isAdmin ? "text-blue-600" : "text-slate-400"}>
+                  {isAdmin ? "admin" : "read-only"}
+                </span>
+              </p>
+            </div>
+          </div>
+          {tab === "chat" && (
+            <button
+              onClick={() => setClearKey((k) => k + 1)}
+              title="Clear conversation"
+              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Tab switcher */}
+        <div className="mt-3 flex gap-1 rounded-lg bg-slate-100 p-1">
+          <button
+            onClick={() => setTab("chat")}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              tab === "chat"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <Bot className="h-3.5 w-3.5" />
+            Copilot
+          </button>
+          <button
+            onClick={() => setTab("digest")}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              tab === "digest"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            <Activity className="h-3.5 w-3.5" />
+            Board Digest
+          </button>
+        </div>
+      </div>
+
+      {tab === "chat" ? (
+        <ChatPanel
+          key={clearKey}
+          isAdmin={isAdmin}
+          projectId={projectId}
+          projectKey={projectKey}
+          quickActions={quickActions}
+          suggestionsLoading={suggestionsQuery.isLoading}
+        />
+      ) : (
+        <DigestPanel projectId={projectId} />
+      )}
+    </aside>
+  )
+}
+
+// ── Chat panel: owns the runtime so it fully resets when key changes ──────────
+
+function ChatPanel({
+  isAdmin,
+  projectId,
+  projectKey,
+  quickActions,
+  suggestionsLoading,
+}: {
+  isAdmin: boolean
+  projectId: number
+  projectKey: string
+  quickActions: Array<{ label: string; prompt: string }>
+  suggestionsLoading: boolean
+}) {
+  const queryClient = useQueryClient()
+
   const adapter = useMemo<ChatModelAdapter>(
     () => ({
       async run({ messages, abortSignal }) {
@@ -68,9 +178,7 @@ export function AIAssistantSidebar({
             content: [
               {
                 type: "text",
-                text:
-                  "Viewers can ask read-only questions, but creating, moving, " +
-                  "archiving, or restoring tasks is admin-only.",
+                text: "Viewers can ask read-only questions, but creating, moving, archiving, or restoring tasks is admin-only.",
               },
             ],
           }
@@ -81,12 +189,7 @@ export function AIAssistantSidebar({
         queryClient.invalidateQueries({ queryKey: ["archived", projectId] })
 
         return {
-          content: [
-            {
-              type: "text",
-              text: formatAssistantResponse(response.answer, response.action, response.used_model),
-            },
-          ],
+          content: [{ type: "text", text: response.answer }],
           metadata: {
             custom: {
               presentation: response.presentation,
@@ -117,46 +220,15 @@ export function AIAssistantSidebar({
     ],
   })
 
-  if (board.isLoading) {
-    return (
-      <aside className="flex h-full w-[360px] shrink-0 flex-col border-l border-slate-200 bg-white p-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="mt-4 h-96 w-full" />
-      </aside>
-    )
-  }
-
   return (
-    <aside className="flex h-screen w-[380px] shrink-0 flex-col border-l border-slate-200 bg-white shadow-xl">
-      <div className="border-b border-slate-200 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
-            <Sparkles className="h-4 w-4 text-blue-600" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-slate-900">AI Kanban Copilot</h2>
-            <p className="truncate text-xs text-slate-500">
-              {board.data?.project.name ?? "Project"} · {isAdmin ? "admin" : "read-only"}
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          Asking as{" "}
-          <span className="font-semibold text-slate-800">
-            {user?.display_name ?? user?.email ?? "anonymous"}
-          </span>
-        </div>
-      </div>
-
-      <AssistantRuntimeProvider runtime={runtime}>
-        <AssistantThread
-          isAdmin={isAdmin}
-          projectKey={projectKey}
-          quickActions={quickActions}
-          suggestionsLoading={suggestionsQuery.isLoading}
-        />
-      </AssistantRuntimeProvider>
-    </aside>
+    <AssistantRuntimeProvider runtime={runtime}>
+      <AssistantThread
+        isAdmin={isAdmin}
+        projectKey={projectKey}
+        quickActions={quickActions}
+        suggestionsLoading={suggestionsLoading}
+      />
+    </AssistantRuntimeProvider>
   )
 }
 
@@ -232,23 +304,57 @@ function AssistantMessage() {
   const role = useMessage((message) => message.role)
   const isUser = role === "user"
   const statusType = useMessage((message) => message.status?.type)
-  const metadata = useMessage((message) => (message as { metadata?: { custom?: CustomMetadata } }).metadata?.custom)
+  const metadata = useMessage(
+    (message) => (message as { metadata?: { custom?: CustomMetadata } }).metadata?.custom,
+  )
+  const rawText = useMessage((message) =>
+    message.content
+      .filter((p) => p.type === "text")
+      .map((p) => (p as { type: "text"; text: string }).text)
+      .join(""),
+  )
 
-  if (role === "assistant") {
-    if (statusType === "running") {
-      return (
-        <MessagePrimitive.Root className="mb-3 flex justify-start">
-          <div className="w-[92%]">
-            <AgentThinkingProgress />
-          </div>
-        </MessagePrimitive.Root>
-      )
-    }
+  const [copied, setCopied] = useState(false)
 
-    if (metadata?.presentation) {
-      return (
-        <MessagePrimitive.Root className="mb-3 flex justify-start">
-          <div className="w-[92%] rounded-2xl rounded-bl-sm bg-white p-4 text-slate-700 shadow-md">
+  const handleCopy = () => {
+    const text = metadata?.presentation
+      ? [
+          metadata.presentation.title,
+          metadata.presentation.summary,
+          ...(metadata.presentation.highlights ?? []),
+        ].join("\n")
+      : rawText
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  if (isUser) {
+    return (
+      <MessagePrimitive.Root className="mb-3 flex justify-end">
+        <div className="max-w-[88%] rounded-2xl rounded-br-sm bg-blue-600 px-3 py-2 text-sm leading-relaxed text-white">
+          <MessagePrimitive.Content components={{ Text: MessageText }} />
+        </div>
+      </MessagePrimitive.Root>
+    )
+  }
+
+  if (statusType === "running") {
+    return (
+      <MessagePrimitive.Root className="mb-3 flex justify-start">
+        <div className="w-[92%]">
+          <AgentThinkingProgress />
+        </div>
+      </MessagePrimitive.Root>
+    )
+  }
+
+  return (
+    <MessagePrimitive.Root className="group mb-3 flex justify-start">
+      <div className="relative w-[92%]">
+        {metadata?.presentation ? (
+          <div className="rounded-2xl rounded-bl-sm bg-white p-4 text-slate-700 shadow-md">
             <PresentationMessage
               presentation={metadata.presentation}
               sql={metadata.sql}
@@ -256,27 +362,25 @@ function AssistantMessage() {
               action={metadata.action}
             />
           </div>
-        </MessagePrimitive.Root>
-      )
-    }
-  }
+        ) : (
+          <div className="rounded-2xl rounded-bl-sm bg-slate-100 px-3 py-2 text-sm leading-relaxed text-slate-700">
+            <MessagePrimitive.Content components={{ Text: MessageText }} />
+          </div>
+        )}
 
-  return (
-    <MessagePrimitive.Root
-      className={`mb-3 flex ${isUser ? "justify-end" : "justify-start"}`}
-    >
-      <div
-        className={`max-w-[92%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
-          isUser
-            ? "rounded-br-sm bg-blue-600 text-white"
-            : "rounded-bl-sm bg-slate-100 text-slate-700"
-        }`}
-      >
-        <MessagePrimitive.Content
-          components={{
-            Text: MessageText,
-          }}
-        />
+        {/* Copy button — appears on hover */}
+        <button
+          onClick={handleCopy}
+          title={copied ? "Copied!" : "Copy response"}
+          className="absolute -bottom-1 right-0 flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] text-slate-500 opacity-0 shadow-sm transition-opacity hover:text-blue-600 group-hover:opacity-100"
+        >
+          {copied ? (
+            <Check className="h-3 w-3 text-emerald-500" />
+          ) : (
+            <Copy className="h-3 w-3" />
+          )}
+          {copied ? "Copied" : "Copy"}
+        </button>
       </div>
     </MessagePrimitive.Root>
   )
@@ -353,15 +457,13 @@ function latestUserText(messages: readonly ThreadMessage[]) {
   )
 }
 
-function formatAssistantResponse(answer: string, action: string, model: string) {
-  return `${answer}\n\nAction: ${action}\nModel: ${model}`
-}
-
 function isMutationPrompt(prompt: string) {
   return /\b(create|add|new|archive|archieve|restore|unarchive|move|change|set|update|delete|remove)\b/i.test(
     prompt,
   )
 }
+
+// ── Agent thinking progress ───────────────────────────────────────────────────
 
 const STEPS = [
   { id: "routing", label: "Routing Agent", description: "Checking query relevance & intent" },
@@ -374,21 +476,16 @@ const STEPS = [
 function AgentThinkingProgress() {
   const [stepIdx, setStepIdx] = useState(0)
 
-  useEffect(() => {
+  useState(() => {
     const timer = setInterval(() => {
       setStepIdx((prev) => {
-        if (prev < STEPS.length - 1) {
-          return prev + 1
-        }
+        if (prev < STEPS.length - 1) return prev + 1
         clearInterval(timer)
         return prev
       })
     }, 450)
-
-    return () => {
-      clearInterval(timer)
-    }
-  }, [])
+    return () => clearInterval(timer)
+  })
 
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-slate-100/50 p-4 shadow-sm backdrop-blur-sm">
@@ -401,7 +498,6 @@ function AgentThinkingProgress() {
           const isDone = idx < stepIdx
           const isActive = idx === stepIdx
           const isPending = idx > stepIdx
-
           return (
             <div
               key={step.id}
@@ -414,8 +510,8 @@ function AgentThinkingProgress() {
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                 ) : isActive ? (
                   <div className="relative flex h-3.5 w-3.5 items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500" />
                   </div>
                 ) : (
                   <Circle className="h-3.5 w-3.5 text-slate-300" />
@@ -443,27 +539,24 @@ function AgentThinkingProgress() {
   )
 }
 
+// ── Presentation message ──────────────────────────────────────────────────────
+
 function PresentationMessage({
   presentation,
   sql,
   usedModel,
   action,
 }: {
-  presentation: {
-    title: string
-    summary: string
-    highlights: string[]
-    next_steps: string[]
-  }
+  presentation: { title: string; summary: string; highlights: string[]; next_steps: string[] }
   sql?: string
   usedModel?: string
   action?: string
 }) {
-  const api = useAui()
+  const aui = useAui()
   const [showSql, setShowSql] = useState(false)
 
   const handleNextStepClick = (prompt: string) => {
-    api.thread().append({
+    aui.thread().append({
       role: "user",
       content: [{ type: "text", text: prompt }],
     })
@@ -471,28 +564,26 @@ function PresentationMessage({
 
   return (
     <div className="flex flex-col gap-4 text-slate-800">
-      {/* Header section with Action Title and Badge */}
+      {/* Title + action badge */}
       <div className="flex items-start justify-between gap-2 pb-2">
         <div className="font-semibold text-slate-900 flex items-center gap-1.5 text-xs">
           <Sparkles className="h-3.5 w-3.5 text-blue-500 shrink-0" />
           {presentation.title}
         </div>
-        <div className="flex flex-wrap gap-1">
-          {action && (
-            <Badge className="bg-slate-100 hover:bg-slate-100 text-slate-600 border-none py-0 px-1.5 text-[9px]">
-              {action}
-            </Badge>
-          )}
-        </div>
+        {action && (
+          <Badge className="bg-slate-100 hover:bg-slate-100 text-slate-600 border-none py-0 px-1.5 text-[9px] shrink-0">
+            {action}
+          </Badge>
+        )}
       </div>
 
-      {/* Main summary */}
+      {/* Summary */}
       <div className="text-xs font-medium text-slate-800 leading-relaxed whitespace-pre-wrap">
         <ReactMarkdown>{presentation.summary}</ReactMarkdown>
       </div>
 
       {/* Highlights */}
-      {presentation.highlights && presentation.highlights.length > 0 && (
+      {presentation.highlights?.length > 0 && (
         <div className="space-y-1.5 rounded-lg bg-slate-50/80 p-2.5">
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
             Highlights
@@ -508,7 +599,7 @@ function PresentationMessage({
         </div>
       )}
 
-      {/* SQL block if query is complex */}
+      {/* SQL toggle */}
       {sql && (
         <div className="space-y-1.5">
           <button
@@ -527,8 +618,8 @@ function PresentationMessage({
         </div>
       )}
 
-      {/* Next Steps */}
-      {presentation.next_steps && presentation.next_steps.length > 0 && (
+      {/* Suggested actions */}
+      {presentation.next_steps?.length > 0 && (
         <div className="space-y-2 pt-3">
           <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
             <Lightbulb className="h-3 w-3 text-amber-500" />
@@ -551,12 +642,223 @@ function PresentationMessage({
         </div>
       )}
 
-      {/* Footer details */}
       {usedModel && (
-        <div className="text-[9px] text-slate-350 self-end">
+        <div className="text-[9px] text-slate-400 self-end">
           Processed by {usedModel}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Board Digest Panel ────────────────────────────────────────────────────────
+
+function scoreColor(score: number) {
+  if (score >= 8) return "text-emerald-600"
+  if (score >= 5) return "text-amber-600"
+  return "text-red-600"
+}
+
+function scoreBg(score: number) {
+  if (score >= 8) return "bg-emerald-50 border-emerald-200"
+  if (score >= 5) return "bg-amber-50 border-amber-200"
+  return "bg-red-50 border-red-200"
+}
+
+function IssueBadge({ severity }: { severity: DigestIssue["severity"] }) {
+  if (severity === "critical")
+    return <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+  if (severity === "warning")
+    return <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+  return <Info className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+}
+
+function StatPill({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex flex-col items-center rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 min-w-[56px]">
+      <span className="text-base font-bold text-slate-800">{value}</span>
+      <span className="text-[10px] text-slate-500 capitalize">{label}</span>
+    </div>
+  )
+}
+
+function DigestPanel({ projectId }: { projectId: number }) {
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null)
+
+  const digestQuery = useQuery({
+    queryKey: ["digest", projectId, fetchedAt],
+    queryFn: () => api.aiDigest(projectId),
+    enabled: fetchedAt !== null,
+    staleTime: Infinity,
+  })
+
+  const handleGenerate = () => setFetchedAt(Date.now())
+  const stats = digestQuery.data?.stats as Record<string, number> | undefined
+
+  return (
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      {fetchedAt === null && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
+            <Activity className="h-7 w-7 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Board Digest</p>
+            <p className="mt-1 text-xs text-slate-500">
+              AI-generated standup report: health score, recent activity, blockers, and recommended actions.
+            </p>
+          </div>
+          <Button
+            onClick={handleGenerate}
+            className="gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl px-5"
+          >
+            <Sparkles className="h-4 w-4" />
+            Generate Digest
+          </Button>
+        </div>
+      )}
+
+      {digestQuery.isLoading && (
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-16 w-full rounded-xl" />
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mt-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Analyzing board with AI…
+          </div>
+        </div>
+      )}
+
+      {digestQuery.isError && (
+        <div className="m-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Failed to generate digest: {(digestQuery.error as Error).message}
+        </div>
+      )}
+
+      {digestQuery.data && (
+        <div className="flex flex-col gap-4 p-4">
+          <div className={`rounded-xl border p-4 ${scoreBg(digestQuery.data.health_score)}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Heart className={`h-4 w-4 ${scoreColor(digestQuery.data.health_score)}`} />
+                <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                  Board Health
+                </span>
+              </div>
+              <span className={`text-2xl font-bold ${scoreColor(digestQuery.data.health_score)}`}>
+                {digestQuery.data.health_score}
+                <span className="text-sm font-normal text-slate-400">/10</span>
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-slate-700 leading-relaxed">
+              {digestQuery.data.summary}
+            </p>
+          </div>
+
+          {stats && (
+            <div className="flex gap-2 flex-wrap">
+              <StatPill label="Active" value={stats.total_active ?? 0} />
+              <StatPill label="Done" value={stats.done ?? 0} />
+              <StatPill label="In Progress" value={stats.in_progress ?? 0} />
+              <StatPill label="Overdue" value={stats.overdue ?? 0} />
+              <StatPill label="Events (24h)" value={stats.events_24h ?? 0} />
+            </div>
+          )}
+
+          {digestQuery.data.issues.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-3 py-2 bg-slate-50 border-b border-slate-100">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  Issues Detected
+                </span>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {digestQuery.data.issues.map((issue, i) => (
+                  <div key={i} className="flex items-start gap-2 px-3 py-2.5">
+                    <IssueBadge severity={issue.severity} />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-800">{issue.title}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{issue.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {digestQuery.data.done_today.length > 0 && (
+            <DigestSection
+              title="Done"
+              items={digestQuery.data.done_today}
+              color="emerald"
+              icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+            />
+          )}
+          {digestQuery.data.in_progress.length > 0 && (
+            <DigestSection
+              title="In Progress"
+              items={digestQuery.data.in_progress}
+              color="blue"
+              icon={<Circle className="h-3.5 w-3.5 text-blue-500" />}
+            />
+          )}
+          {digestQuery.data.blockers.length > 0 && (
+            <DigestSection
+              title="Blockers / Risks"
+              items={digestQuery.data.blockers}
+              color="red"
+              icon={<AlertTriangle className="h-3.5 w-3.5 text-red-500" />}
+            />
+          )}
+
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[10px] text-slate-400">
+              Generated {new Date(digestQuery.data.generated_at).toLocaleTimeString()}
+            </span>
+            <button
+              onClick={handleGenerate}
+              className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-blue-600 transition-colors"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Refresh
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DigestSection({
+  title,
+  items,
+  color,
+  icon,
+}: {
+  title: string
+  items: string[]
+  color: "emerald" | "blue" | "red"
+  icon: React.ReactNode
+}) {
+  const borderClass = { emerald: "border-emerald-100", blue: "border-blue-100", red: "border-red-100" }[color]
+  const bgClass = { emerald: "bg-emerald-50", blue: "bg-blue-50", red: "bg-red-50" }[color]
+  return (
+    <div className={`rounded-xl border ${borderClass} overflow-hidden`}>
+      <div className={`flex items-center gap-1.5 px-3 py-2 ${bgClass} border-b ${borderClass}`}>
+        {icon}
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+          {title}
+        </span>
+      </div>
+      <ul className="divide-y divide-slate-100 bg-white">
+        {items.map((item, i) => (
+          <li key={i} className="px-3 py-2 text-xs text-slate-700 leading-relaxed">
+            {item}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

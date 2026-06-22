@@ -22,6 +22,8 @@ from app.repositories import TaskRepository, task_to_read
 from app.schemas.product import (
     AIQueryResponse,
     AIResponsePresentation,
+    DigestIssue,
+    DigestResponse,
     Suggestion,
     SuggestionsResponse,
     TaskCreate,
@@ -401,15 +403,18 @@ class KanbanAIService:
                 return _resp(viewer_error, "reject_unrelated", self._MODEL)
             return self._create_task(project_id, _title_from_create(raw), prio or "medium")
 
-        # ── 0. Check relevance via Routing Agent after known local intents ────
-        routing_resp = self._check_routing(raw)
-        if routing_resp:
-            return routing_resp
+        # ── 7. Analyst Agent: classify first to avoid a redundant routing call ──
+        # For analytical questions we skip the routing LLM call entirely — classify
+        # is cheaper and already determines relevance for this path.
+        is_analytical = self._analyst is not None and self._analyst.classify(raw)
 
-        # ── 7. Analyst Agent: analytical questions ───────────────────────────
-        # Keep this before generic board summary so "how many/count/status" analytics
-        # are not swallowed by the deterministic summary shortcut.
-        if self._analyst and self._analyst.classify(raw):
+        # ── 0. Check relevance via Routing Agent (only for non-analytical questions) ──
+        if not is_analytical:
+            routing_resp = self._check_routing(raw)
+            if routing_resp:
+                return routing_resp
+
+        if is_analytical:
             analyst_result = self._analyst_query(project_id, raw, roles)
             if analyst_result:
                 return analyst_result
@@ -789,13 +794,11 @@ class KanbanAIService:
 
             orchestrator = MasterOrchestrator(settings=self.settings)
 
+            loop = asyncio.new_event_loop()
             try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-            res = loop.run_until_complete(orchestrator.run(req))
+                res = loop.run_until_complete(orchestrator.run(req))
+            finally:
+                loop.close()
 
             if not res or not res.sql or not res.sql.query:
                 return None
@@ -1200,12 +1203,199 @@ class KanbanAIService:
                 Suggestion(label="High priority", prompt="Show all tasks with high priority")
             )
 
-        suggestions.append(
-            Suggestion(label="Archive all", prompt="Archive all tasks in this project")
-        )
-        suggestions.append(Suggestion(label="Restore all", prompt="Restore all archived tasks"))
-
         return SuggestionsResponse(suggestions=suggestions[:6])
+
+    # ─── Board Digest ─────────────────────────────────────────────────────────
+
+    def digest(self, project_id: int) -> DigestResponse:
+        """
+        Generate a structured board health report + standup summary.
+        Reads board state + last-24h activity events, calls Groq for narrative.
+        Falls back to a deterministic report if Groq is unavailable.
+        """
+        from datetime import UTC, datetime, timedelta
+
+        now = datetime.now(UTC)
+        cutoff = now - timedelta(hours=24)
+
+        project = self.session.get(models.Project, project_id)
+        if not project:
+            return DigestResponse(
+                health_score=0,
+                summary="Project not found.",
+                done_today=[],
+                in_progress=[],
+                blockers=[],
+                issues=[],
+                stats={},
+                generated_at=now,
+            )
+
+        # ── Gather board state ──────────────────────────────────────────────
+        statuses = self._statuses(project_id)
+        sid_to_name = {s.id: s.name for s in statuses}
+        sid_to_cat = {s.id: s.category for s in statuses}
+
+        tasks = self.session.scalars(
+            select(models.Task).where(
+                models.Task.project_id == project_id,
+                models.Task.archived.is_(False),
+            )
+        ).all()
+
+        overdue = [t for t in tasks if t.due_date and t.due_date.replace(tzinfo=UTC) < now]
+        unassigned = [t for t in tasks if not t.assignee]
+        critical = [t for t in tasks if t.priority == "critical"]
+        done_tasks = [t for t in tasks if sid_to_cat.get(t.status_id) == "done"]
+        active_tasks = [t for t in tasks if sid_to_cat.get(t.status_id) == "active"]
+        todo_tasks = [t for t in tasks if sid_to_cat.get(t.status_id) == "todo"]
+
+        by_status: dict[str, int] = {s.name: 0 for s in statuses}
+        for t in tasks:
+            by_status[sid_to_name.get(t.status_id, "Unknown")] = \
+                by_status.get(sid_to_name.get(t.status_id, "Unknown"), 0) + 1
+
+        # ── Gather recent activity ──────────────────────────────────────────
+        recent_events = self.session.scalars(
+            select(models.ActivityEvent)
+            .where(
+                models.ActivityEvent.project_id == project_id,
+                models.ActivityEvent.created_at >= cutoff.replace(tzinfo=None),
+            )
+            .order_by(models.ActivityEvent.created_at.desc())
+            .limit(50)
+        ).all()
+
+        # Build human-readable activity lines
+        activity_lines: list[str] = []
+        for ev in recent_events:
+            try:
+                import json as _json
+                payload = _json.loads(ev.payload) if ev.payload else {}
+            except Exception:
+                payload = {}
+            task_key = payload.get("task_key") or payload.get("key") or f"task#{ev.task_id}"
+            activity_lines.append(f"  [{ev.event_type}] {task_key} by {ev.actor}")
+
+        # ── Deterministic issues ────────────────────────────────────────────
+        issues: list[DigestIssue] = []
+        if overdue:
+            issues.append(DigestIssue(
+                severity="critical",
+                title=f"{len(overdue)} overdue task(s)",
+                detail=", ".join(t.key or f"#{t.id}" for t in overdue[:5]),
+            ))
+        if critical and any(sid_to_cat.get(t.status_id) != "done" for t in critical):
+            open_critical = [t for t in critical if sid_to_cat.get(t.status_id) != "done"]
+            issues.append(DigestIssue(
+                severity="warning",
+                title=f"{len(open_critical)} open critical-priority task(s)",
+                detail=", ".join(t.key or f"#{t.id}" for t in open_critical[:5]),
+            ))
+        if len(unassigned) > len(tasks) * 0.5 and len(tasks) > 0:
+            issues.append(DigestIssue(
+                severity="warning",
+                title=f"{len(unassigned)}/{len(tasks)} tasks have no assignee",
+                detail="Consider assigning tasks to team members.",
+            ))
+        if len(done_tasks) == 0 and len(tasks) > 3:
+            issues.append(DigestIssue(
+                severity="info",
+                title="No tasks in Done column",
+                detail="Nothing has been completed yet in this project.",
+            ))
+
+        # ── Health score (deterministic baseline) ──────────────────────────
+        score = 10
+        score -= min(4, len(overdue))
+        score -= min(2, len([i for i in issues if i.severity == "warning"]))
+        score -= 1 if len(done_tasks) == 0 and len(tasks) > 3 else 0
+        score = max(1, score)
+
+        stats = {
+            "total_active": len(tasks),
+            "done": len(done_tasks),
+            "in_progress": len(active_tasks),
+            "todo": len(todo_tasks),
+            "overdue": len(overdue),
+            "unassigned": len(unassigned),
+            "events_24h": len(recent_events),
+            "by_status": by_status,
+        }
+
+        # ── Call Groq for narrative ─────────────────────────────────────────
+        if self.settings.groq_api_key:
+            try:
+                from langchain_core.messages import HumanMessage, SystemMessage
+                from langchain_groq import ChatGroq
+
+                class _DigestOutput(BaseModel):
+                    health_score: int = Field(ge=1, le=10)
+                    summary: str = Field(description="2-3 sentence board health summary")
+                    done_today: list[str] = Field(description="Tasks completed or moved to Done recently (max 5)")
+                    in_progress: list[str] = Field(description="Key tasks currently in progress (max 5)")
+                    blockers: list[str] = Field(description="Identified blockers or risks (max 3)")
+
+                sys_msg = (
+                    "You are a senior engineering manager reviewing a Kanban board. "
+                    "Based on the board state and recent activity, produce a concise daily digest. "
+                    "Be specific about task keys and names. Use the exact data provided — do not invent tasks. "
+                    "Keep lists short and actionable. health_score must reflect overdue tasks and blockers."
+                )
+
+                board_ctx = (
+                    f"Project: {project.name} ({project.key})\n"
+                    f"Board stats: {stats}\n"
+                    f"Issues detected: {[i.model_dump() for i in issues]}\n"
+                    f"Active tasks (sample): {self._task_prompt_sample(list(tasks[:20]))}\n"
+                    f"Recent activity (last 24h):\n" + ("\n".join(activity_lines[:20]) or "  (none)")
+                )
+
+                model = ChatGroq(
+                    api_key=self.settings.groq_api_key,
+                    model=self.settings.groq_model,
+                    temperature=0.3,
+                ).with_structured_output(_DigestOutput)
+
+                result: _DigestOutput = model.invoke(
+                    [SystemMessage(content=sys_msg), HumanMessage(content=board_ctx)]
+                )
+
+                return DigestResponse(
+                    health_score=result.health_score,
+                    summary=result.summary,
+                    done_today=result.done_today,
+                    in_progress=result.in_progress,
+                    blockers=result.blockers,
+                    issues=issues,
+                    stats=stats,
+                    generated_at=now,
+                )
+            except Exception as e:
+                import sys as _sys
+                print(f"Digest LLM call failed: {e}", file=_sys.stderr)
+
+        # ── Deterministic fallback ──────────────────────────────────────────
+        done_labels = [f"{t.key or f'#{t.id}'}: {t.title}" for t in done_tasks[:5]]
+        wip_labels = [f"{t.key or f'#{t.id}'}: {t.title}" for t in active_tasks[:5]]
+        blockers = [i.title for i in issues if i.severity in ("critical", "warning")]
+
+        summary_parts = [f"{project.name} has {len(tasks)} active task(s)."]
+        if overdue:
+            summary_parts.append(f"{len(overdue)} task(s) are overdue.")
+        if len(done_tasks) > 0:
+            summary_parts.append(f"{len(done_tasks)} task(s) are done.")
+
+        return DigestResponse(
+            health_score=score,
+            summary=" ".join(summary_parts),
+            done_today=done_labels,
+            in_progress=wip_labels,
+            blockers=blockers,
+            issues=issues,
+            stats=stats,
+            generated_at=now,
+        )
 
 
 # Keep backward-compat alias

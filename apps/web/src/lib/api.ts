@@ -98,6 +98,23 @@ export type SuggestionsResponse = {
   suggestions: Suggestion[]
 }
 
+export type DigestIssue = {
+  severity: "critical" | "warning" | "info"
+  title: string
+  detail: string
+}
+
+export type DigestResponse = {
+  health_score: number
+  summary: string
+  done_today: string[]
+  in_progress: string[]
+  blockers: string[]
+  issues: DigestIssue[]
+  stats: Record<string, unknown>
+  generated_at: string
+}
+
 export type AuthUser = {
   id: number
   email: string
@@ -204,6 +221,8 @@ export const api = {
     }),
   aiSuggestions: (projectId: number) =>
     request<SuggestionsResponse>(`/api/projects/${projectId}/ai/suggestions`),
+  aiDigest: (projectId: number) =>
+    request<DigestResponse>(`/api/projects/${projectId}/ai/digest`),
 
   // ── Members ───────────────────────────────────────────────────────────────
   listMembers: (projectId: number) =>

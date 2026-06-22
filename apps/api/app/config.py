@@ -82,15 +82,10 @@ class Settings(BaseSettings):
     def resolved_auth_secret(self) -> str:
         if self.auth_secret:
             return self.auth_secret
-        if self.is_production:
-            raise RuntimeError("CPV_AUTH_SECRET must be set in production")
-        import warnings
-        warnings.warn(
-            "CPV_AUTH_SECRET is not set — using insecure dev fallback. "
-            "Do NOT use this in production.",
-            stacklevel=2,
+        raise RuntimeError(
+            "CPV_AUTH_SECRET is not set. "
+            "Add it to your .env file: CPV_AUTH_SECRET=<64-char hex secret>"
         )
-        return "fluxboard-dev-insecure-secret-do-not-use-in-prod"
 
     @property
     def cors_origin_list(self) -> list[str]:
