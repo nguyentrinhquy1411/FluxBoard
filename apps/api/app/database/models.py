@@ -178,6 +178,16 @@ class ProjectMember(Base, TimestampMixin):
     )
 
 
+class User(Base, TimestampMixin):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(160), nullable=False, unique=True, index=True)
+    display_name: Mapped[str | None] = mapped_column(String(160))
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
 class ProjectInvite(Base):
     __tablename__ = "project_invites"
 
@@ -186,6 +196,8 @@ class ProjectInvite(Base):
     token: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     role: Mapped[str] = mapped_column(String(40), nullable=False, default="viewer")
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     project: Mapped[Project] = relationship()

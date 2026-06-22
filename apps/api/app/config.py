@@ -64,6 +64,34 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("OLLAMA_BASE_URL", "CPV_OLLAMA_BASE_URL"),
     )
 
+    environment: str = Field(
+        default="development",
+        validation_alias=AliasChoices("CPV_ENVIRONMENT", "ENVIRONMENT", "VERCEL_ENV"),
+    )
+    auth_secret: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("CPV_AUTH_SECRET"),
+    )
+    auth_token_ttl_minutes: int = Field(default=60 * 24 * 7, ge=1)  # 7 days
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() in {"production", "prod"}
+
+    @property
+    def resolved_auth_secret(self) -> str:
+        if self.auth_secret:
+            return self.auth_secret
+        if self.is_production:
+            raise RuntimeError("CPV_AUTH_SECRET must be set in production")
+        import warnings
+        warnings.warn(
+            "CPV_AUTH_SECRET is not set — using insecure dev fallback. "
+            "Do NOT use this in production.",
+            stacklevel=2,
+        )
+        return "fluxboard-dev-insecure-secret-do-not-use-in-prod"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

@@ -5,9 +5,11 @@ import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/AuthContext"
 
 export function ProjectMembers({ projectId, isAdmin }: { projectId: number; isAdmin: boolean }) {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   const [emailInput, setEmailInput] = useState("")
   const [roleSelect, setRoleSelect] = useState("viewer")
   const [inviteRole, setInviteRole] = useState("viewer")
@@ -121,7 +123,7 @@ export function ProjectMembers({ projectId, isAdmin }: { projectId: number; isAd
           )}
 
           {members.data?.map((m) => {
-            const isSelf = m.email === "local-user@example.com"
+            const isSelf = user?.email != null && m.email.toLowerCase() === user.email.toLowerCase()
             const isRowUpdating = updatingEmail === m.email
             const isRowRemoving = removingMemberId === m.id
 

@@ -64,7 +64,7 @@ def test_routing_agent_unrelated_query() -> None:
         mock_instance.with_structured_output.return_value.invoke.return_value = mock_decision
 
         # We query the service
-        resp = service.answer(project_id, "Thủ đô của nước Pháp là gì?")
+        resp = service.answer(project_id, "Thủ đô của nước Pháp là gì?", roles=["admin"])
 
         assert resp.action == "reject_unrelated"
         assert resp.answer == "Xin lỗi, tôi chỉ trả lời câu hỏi liên quan đến Kanban và công việc."
@@ -85,7 +85,7 @@ def test_routing_agent_related_query() -> None:
         mock_instance.with_structured_output.return_value.invoke.return_value = mock_decision
 
         # We query the service with a related board summary question
-        resp = service.answer(project_id, "tóm tắt dự án hiện tại")
+        resp = service.answer(project_id, "tóm tắt dự án hiện tại", roles=["admin"])
 
         # It should pass through the routing check and return the board summary
         assert resp.action == "read_board"

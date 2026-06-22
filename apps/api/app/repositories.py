@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -28,12 +29,13 @@ from app.schemas.product import (
     TaskUpdate,
 )
 
-LOCAL_USER = "local-user"
+LOCAL_USER = "system"
 
 
 class ProjectRepository:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, actor: str = "system") -> None:
         self.session = session
+        self.actor = actor
 
     def _ensure_smoke_project(self) -> models.Project:
         smoke = self.session.scalar(
@@ -209,8 +211,8 @@ class ProjectRepository:
             name=payload.name,
             key=unique_key,
             description=payload.description,
-            created_by=creator_email,
-            updated_by=creator_email,
+            created_by=self.actor,
+            updated_by=self.actor,
         )
         self.session.add(project)
         self.session.flush()
@@ -331,7 +333,7 @@ class ProjectRepository:
             models.ActivityEvent(
                 project_id=project_id,
                 task_id=task_id,
-                actor=LOCAL_USER,
+                actor=self.actor,
                 event_type=event_type,
                 payload=json.dumps(payload, default=str),
             )
@@ -430,8 +432,9 @@ class ProjectRepository:
 
 
 class TaskRepository:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, actor: str = "system") -> None:
         self.session = session
+        self.actor = actor
 
     def create_task(self, project_id: int, payload: TaskCreate) -> TaskRead:
         status_id = payload.status_id or self._first_status_id(project_id)
@@ -450,8 +453,8 @@ class TaskRepository:
             assignee=payload.assignee,
             due_date=payload.due_date,
             position=position,
-            created_by=LOCAL_USER,
-            updated_by=LOCAL_USER,
+            created_by=self.actor,
+            updated_by=self.actor,
         )
         self.session.add(task)
         self.session.flush()
@@ -466,7 +469,7 @@ class TaskRepository:
             self._ensure_status_in_project(task.project_id, changes["status_id"])
         for key, value in changes.items():
             setattr(task, key, value)
-        task.updated_by = LOCAL_USER
+        task.updated_by = self.actor
         self._activity(task.project_id, task.id, "task.updated", changes)
         self.session.flush()
         self.session.refresh(task)
@@ -488,7 +491,7 @@ class TaskRepository:
             after_task_id,
             before_task_id,
         )
-        task.updated_by = LOCAL_USER
+        task.updated_by = self.actor
         self._activity(
             task.project_id,
             task.id,
@@ -502,7 +505,7 @@ class TaskRepository:
     def archive_task(self, task_id: int) -> TaskRead:
         task = self._get_task(task_id)
         task.archived = True
-        task.updated_by = LOCAL_USER
+        task.updated_by = self.actor
         self._activity(task.project_id, task.id, "task.archived", {"archived": True})
         self.session.flush()
         self.session.refresh(task)
@@ -511,7 +514,7 @@ class TaskRepository:
     def restore_task(self, task_id: int) -> TaskRead:
         task = self._get_task(task_id)
         task.archived = False
-        task.updated_by = LOCAL_USER
+        task.updated_by = self.actor
         self._activity(task.project_id, task.id, "task.restored", {"archived": False})
         self.session.flush()
         self.session.refresh(task)
@@ -555,7 +558,7 @@ class TaskRepository:
 
     def create_comment(self, task_id: int, payload: CommentCreate) -> CommentRead:
         task = self._get_task(task_id)
-        comment = models.Comment(task_id=task_id, body=payload.body, created_by=LOCAL_USER)
+        comment = models.Comment(task_id=task_id, body=payload.body, created_by=self.actor)
         self.session.add(comment)
         self._activity(task.project_id, task.id, "comment.created", {"body": payload.body})
         self.session.flush()
@@ -608,7 +611,7 @@ class TaskRepository:
 
     def create_invite(self, project_id: int, payload: ProjectInviteCreate) -> ProjectInviteRead:
         project = self.get_project(project_id)
-        token = uuid.uuid4().hex
+        token = secrets.token_urlsafe(32)
         expires_at = datetime.now(tz=UTC) + timedelta(hours=payload.expires_in_hours)
         invite = models.ProjectInvite(
             project_id=project_id,
@@ -635,6 +638,10 @@ class TaskRepository:
         )
         if invite is None:
             raise LookupError("invite not found")
+        if invite.revoked_at is not None:
+            raise ValueError("invite has been revoked")
+        if invite.accepted_at is not None:
+            raise ValueError("invite has already been used")
         if invite.expires_at.replace(tzinfo=UTC) < datetime.now(tz=UTC):
             raise ValueError("invite has expired")
         return ProjectInviteRead(
@@ -647,35 +654,46 @@ class TaskRepository:
             created_at=invite.created_at,
         )
 
-    def accept_invite(self, token: str, payload: InviteAcceptPayload) -> int:
+    def accept_invite(self, token: str, user_email: str, display_name: str | None = None) -> int:
         invite = self.session.scalar(
             select(models.ProjectInvite).where(models.ProjectInvite.token == token)
         )
         if invite is None:
             raise LookupError("invite not found")
+        if invite.revoked_at is not None:
+            raise ValueError("invite has been revoked")
+        if invite.accepted_at is not None:
+            raise ValueError("invite has already been used")
         if invite.expires_at.replace(tzinfo=UTC) < datetime.now(tz=UTC):
             raise ValueError("invite has expired")
-        # Add or update member
         existing = self.session.scalar(
             select(models.ProjectMember).where(
                 models.ProjectMember.project_id == invite.project_id,
-                models.ProjectMember.email == payload.email,
+                models.ProjectMember.email == user_email,
             )
         )
         if existing:
             existing.role = invite.role
-            if payload.name:
-                existing.display_name = payload.name
+            if display_name:
+                existing.display_name = display_name
         else:
             member = models.ProjectMember(
                 project_id=invite.project_id,
-                email=payload.email,
-                display_name=payload.name,
+                email=user_email,
+                display_name=display_name,
                 role=invite.role,
             )
             self.session.add(member)
+        invite.accepted_at = datetime.now(tz=UTC).replace(tzinfo=None)
         self.session.flush()
         return invite.project_id
+
+    def revoke_invite(self, invite_id: int) -> None:
+        invite = self.session.get(models.ProjectInvite, invite_id)
+        if invite is None:
+            raise LookupError("invite not found")
+        invite.revoked_at = datetime.now(tz=UTC).replace(tzinfo=None)
+        self.session.flush()
 
     def _get_task(self, task_id: int) -> models.Task:
         task = self.session.get(models.Task, task_id)
@@ -783,7 +801,7 @@ class TaskRepository:
             models.ActivityEvent(
                 project_id=project_id,
                 task_id=task_id,
-                actor=LOCAL_USER,
+                actor=self.actor,
                 event_type=event_type,
                 payload=json.dumps(payload, default=str),
             )

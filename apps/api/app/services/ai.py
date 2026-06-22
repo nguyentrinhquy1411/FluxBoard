@@ -321,7 +321,11 @@ class KanbanAIService:
     # ─── public entry point ───────────────────────────────────────────────────
 
     def answer(
-        self, project_id: int, question: str, user_email: str | None = None
+        self,
+        project_id: int,
+        question: str,
+        actor_email: str = "system",
+        roles: list[str] | None = None,
     ) -> AIQueryResponse:
         raw = question.strip()
         low = raw.lower()
@@ -330,19 +334,8 @@ class KanbanAIService:
         if project is None:
             return _resp("❌ Project not found.", "reject_unrelated", self._MODEL)
 
-        roles = []
-        if project.key == "SMOKE":
-            roles = ["admin"]
-        else:
-            email = user_email or "local-user@example.com"
-            member = self.session.scalar(
-                select(models.ProjectMember).where(
-                    models.ProjectMember.project_id == project_id,
-                    models.ProjectMember.email == email,
-                )
-            )
-            if member:
-                roles = [member.role]
+        if roles is None:
+            roles = []
 
         if not roles:
             return _resp(
@@ -350,6 +343,9 @@ class KanbanAIService:
                 "reject_unrelated",
                 self._MODEL,
             )
+
+        # Use real actor in mutations so audit trail reflects the actual user
+        self._repo = TaskRepository(self.session, actor=actor_email)
 
         task_key = _key(raw)
         prio = _priority(low)

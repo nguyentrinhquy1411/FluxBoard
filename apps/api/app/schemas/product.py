@@ -120,7 +120,6 @@ class CommentRead(BaseModel):
 class AIQueryRequest(BaseModel):
     project_id: int
     question: str = Field(min_length=1)
-    user_email: str | None = None
 
 
 class ProjectMemberCreate(BaseModel):
@@ -182,5 +181,4 @@ class ProjectInviteRead(BaseModel):
 
 
 class InviteAcceptPayload(BaseModel):
-    email: str = Field(min_length=1, max_length=160)
     name: str | None = Field(default=None, max_length=160)

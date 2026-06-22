@@ -20,6 +20,7 @@ def upgrade() -> None:
     Base.metadata.create_all(engine)
     ensure_task_key_columns(engine)
     ensure_invite_and_member_columns(engine)
+    ensure_users_table(engine)
     typer.echo(f"Database schema is ready for {settings.app_db_name}.")
 
 
@@ -37,10 +38,37 @@ def ensure_invite_and_member_columns(engine) -> None:
                     text("ALTER TABLE project_members ADD COLUMN display_name VARCHAR(160) NULL")
                 )
 
-    # Ensure project_invites table exists (create_all handles new tables, but belt-and-suspenders)
-    if "project_invites" not in table_names:
-        # create_all already ran above, so this is a no-op; kept for clarity
-        pass
+    # Add accepted_at and revoked_at to project_invites if missing
+    if "project_invites" in table_names:
+        col_names = {c["name"] for c in inspector.get_columns("project_invites")}
+        with engine.begin() as conn:
+            if "accepted_at" not in col_names:
+                conn.execute(
+                    text("ALTER TABLE project_invites ADD COLUMN accepted_at DATETIME NULL")
+                )
+            if "revoked_at" not in col_names:
+                conn.execute(
+                    text("ALTER TABLE project_invites ADD COLUMN revoked_at DATETIME NULL")
+                )
+
+
+def ensure_users_table(engine) -> None:
+    """Ensure the users table and its unique index exist for existing DBs."""
+    inspector = inspect(engine)
+    # create_all already handles fresh DBs; this is belt-and-suspenders for existing ones.
+    # Since users is a brand-new table, create_all should have created it above —
+    # but we also ensure the unique index on email is present.
+    if "users" not in inspector.get_table_names():
+        return  # create_all should have created it; nothing to add
+    index_names = {idx["name"] for idx in inspector.get_indexes("users")}
+    if "ix_users_email" not in index_names:
+        with engine.begin() as conn:
+            try:
+                conn.execute(
+                    text("CREATE UNIQUE INDEX ix_users_email ON users (email)")
+                )
+            except Exception:
+                pass  # already exists under a different name
 
 
 def ensure_task_key_columns(engine) -> None:

@@ -26,7 +26,7 @@ import {
 import { useMemo, useState, useEffect } from "react"
 import ReactMarkdown from "react-markdown"
 import { api } from "@/lib/api"
-import { useUser } from "@/contexts/UserContext"
+import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
@@ -39,7 +39,7 @@ export function AIAssistantSidebar({
   isAdmin: boolean
 }) {
   const queryClient = useQueryClient()
-  const { currentEmail } = useUser()
+  const { user } = useAuth()
   const board = useQuery({ queryKey: ["board", projectId], queryFn: () => api.board(projectId) })
   const suggestionsQuery = useQuery({
     queryKey: ["aiSuggestions", projectId],
@@ -76,7 +76,7 @@ export function AIAssistantSidebar({
           }
         }
 
-        const response = await api.aiQuery(projectId, prompt, currentEmail, abortSignal)
+        const response = await api.aiQuery(projectId, prompt, abortSignal)
         queryClient.invalidateQueries({ queryKey: ["board", projectId] })
         queryClient.invalidateQueries({ queryKey: ["archived", projectId] })
 
@@ -98,7 +98,7 @@ export function AIAssistantSidebar({
         }
       },
     }),
-    [currentEmail, isAdmin, projectId, queryClient],
+    [isAdmin, projectId, queryClient],
   )
 
   const runtime = useLocalRuntime(adapter, {
@@ -141,7 +141,10 @@ export function AIAssistantSidebar({
           </div>
         </div>
         <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          Asking as <span className="font-semibold text-slate-800">{currentEmail}</span>
+          Asking as{" "}
+          <span className="font-semibold text-slate-800">
+            {user?.display_name ?? user?.email ?? "anonymous"}
+          </span>
         </div>
       </div>
 

@@ -1,3 +1,5 @@
+import { getAuthToken, triggerUnauthorized } from "@/contexts/AuthContext"
+
 export type Project = {
   id: number
   name: string
@@ -96,40 +98,89 @@ export type SuggestionsResponse = {
   suggestions: Suggestion[]
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? "" : "http://127.0.0.1:8000")
+export type AuthUser = {
+  id: number
+  email: string
+  display_name: string | null
+  is_active: boolean
+}
+
+export type TokenResponse = {
+  access_token: string
+  token_type: string
+  user: AuthUser
+}
+
+export type MembershipResponse = {
+  role: "admin" | "viewer" | null
+  is_member: boolean
+}
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD ? "" : "http://127.0.0.1:8000")
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const email = localStorage.getItem("cpv-identity") || "local-user@example.com"
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      "content-type": "application/json",
-      "X-User-Email": email,
-      ...init?.headers,
-    },
-  })
+  const token = getAuthToken()
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    ...(init?.headers as Record<string, string>),
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+  const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
+  if (response.status === 401) {
+    triggerUnauthorized()
+    throw new Error("Authentication required")
+  }
   if (!response.ok) {
     throw new Error(await response.text())
   }
+  if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
 }
 
 export const api = {
-  listProjects: (userEmail?: string) =>
-    request<Project[]>(
-      userEmail ? `/api/projects?user_email=${encodeURIComponent(userEmail)}` : "/api/projects"
-    ),
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  auth: {
+    register: (email: string, password: string, displayName?: string) =>
+      request<TokenResponse>("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password, display_name: displayName ?? null }),
+      }),
+    login: (email: string, password: string) =>
+      request<TokenResponse>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      }),
+    me: () => request<AuthUser>("/api/auth/me"),
+  },
+
+  // ── Projects ──────────────────────────────────────────────────────────────
+  listProjects: () => request<Project[]>("/api/projects"),
   createProject: (payload: { name: string; key: string; description?: string }) =>
     request<Project>("/api/projects", { method: "POST", body: JSON.stringify(payload) }),
+  getProject: (projectId: number) => request<Project>(`/api/projects/${projectId}`),
+  membership: (projectId: number) =>
+    request<MembershipResponse>(`/api/projects/${projectId}/membership`),
+
+  // ── Board ─────────────────────────────────────────────────────────────────
   board: (projectId: number) => request<Board>(`/api/projects/${projectId}/board`),
-  archivedTasks: (projectId: number) => request<Task[]>(`/api/projects/${projectId}/archived`),
+  archivedTasks: (projectId: number) =>
+    request<Task[]>(`/api/projects/${projectId}/archived`),
+
+  // ── Tasks ─────────────────────────────────────────────────────────────────
   createTask: (projectId: number, payload: Partial<Task> & { title: string }) =>
     request<Task>(`/api/projects/${projectId}/tasks`, {
       method: "POST",
       body: JSON.stringify(payload),
     }),
   updateTask: (taskId: number, payload: Partial<Task>) =>
-    request<Task>(`/api/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+    request<Task>(`/api/tasks/${taskId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
   moveTask: (taskId: number, statusId: number, afterTaskId?: number, beforeTaskId?: number) =>
     request<Task>(`/api/tasks/${taskId}/move`, {
       method: "POST",
@@ -143,14 +194,18 @@ export const api = {
     request<Task>(`/api/tasks/${taskId}/archive`, { method: "POST" }),
   restoreTask: (taskId: number) =>
     request<Task>(`/api/tasks/${taskId}/restore`, { method: "POST" }),
-  aiQuery: (projectId: number, question: string, userEmail?: string, signal?: AbortSignal) =>
+
+  // ── AI ────────────────────────────────────────────────────────────────────
+  aiQuery: (projectId: number, question: string, signal?: AbortSignal) =>
     request<AIQueryResponse>("/api/ai/query", {
       method: "POST",
       signal,
-      body: JSON.stringify({ project_id: projectId, question, user_email: userEmail }),
+      body: JSON.stringify({ project_id: projectId, question }),
     }),
   aiSuggestions: (projectId: number) =>
     request<SuggestionsResponse>(`/api/projects/${projectId}/ai/suggestions`),
+
+  // ── Members ───────────────────────────────────────────────────────────────
   listMembers: (projectId: number) =>
     request<ProjectMember[]>(`/api/projects/${projectId}/members`),
   addMember: (projectId: number, payload: { email: string; role: string }) =>
@@ -160,17 +215,17 @@ export const api = {
     }),
   removeMember: (memberId: number) =>
     request<void>(`/api/members/${memberId}`, { method: "DELETE" }),
+
+  // ── Invites ───────────────────────────────────────────────────────────────
   createInvite: (projectId: number, payload: { role: string; expires_in_hours?: number }) =>
     request<ProjectInviteRead>(`/api/projects/${projectId}/invites`, {
       method: "POST",
       body: JSON.stringify(payload),
     }),
-  getInvite: (token: string) =>
-    request<ProjectInviteRead>(`/api/invites/${token}`),
-  acceptInvite: (token: string, payload: { email: string; name?: string }) =>
+  getInvite: (token: string) => request<ProjectInviteRead>(`/api/invites/${token}`),
+  acceptInvite: (token: string, displayName?: string) =>
     request<{ project_id: number }>(`/api/invites/${token}/accept`, {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ name: displayName ?? null }),
     }),
-  getProject: (projectId: number) => request<Project>(`/api/projects/${projectId}`),
 }
